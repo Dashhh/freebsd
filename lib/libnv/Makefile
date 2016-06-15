@@ -11,7 +11,7 @@ SHLIB_MAJOR= 0
 .PATH: ${.CURDIR}/../../sys/contrib/libnv ${.CURDIR}/../../sys/sys
 CFLAGS+=-I${.CURDIR}/../../sys -I${.CURDIR}
 
-SRCS=	cnv.c
+SRCS=	cnvlist.c
 SRCS+=	dnvlist.c
 SRCS+=	msgio.c
 SRCS+=	nvlist.c

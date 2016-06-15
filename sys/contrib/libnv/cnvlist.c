@@ -52,6 +52,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/cnv.h>
 #include <sys/nv.h>
 
+#include "nvlist_impl.h"
 #include "nv_impl.h"
 
 #define CNVLIST_GET(ftype, type, nvtype)                                \
@@ -60,6 +61,9 @@ cnvlist_get_##type(void *cookiep)                                       \
 {                                                                       \
         if (nvpair_type(cookiep) == NV_TYPE_##nvtype)                   \
                 return (nvpair_get_##type(cookiep));                    \
+	else								\
+		nvlist_report_missing(NV_TYPE_##nvtype,			\
+		    nvpair_name(cookiep));				\
 	return (0);							\
 }
 
@@ -79,6 +83,9 @@ cnvlist_get_##type(void *cookiep, size_t *nitemsp)                      \
 {                                                                       \
         if (nvpair_type(cookiep) == NV_TYPE_##nvtype)                   \
                 return (nvpair_get_##type(cookiep, nitemsp));           \
+	else								\
+		nvlist_report_missing(NV_TYPE_##nvtype,			\
+		    nvpair_name(cookiep));				\
         return (0);                                                     \
 }
 
