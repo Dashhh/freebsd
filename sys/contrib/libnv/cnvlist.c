@@ -112,15 +112,8 @@ cnvlist_get_binary(void *cookiep, size_t *sizep)
 ftype                                                                   \
 cnvlist_take_##type(nvlist_t *nvl, void *cookiep)                       \
 {                                                                       \
-        if (nvpair_type(cookiep) != NV_TYPE_##nvtype) {                 \
-		const char *name = nvpair_name(cookiep);		\
-		nvlist_report_missing(NV_TYPE_##nvtype,	name);		\
-	}								\
-        ftype value;							\
-        value = (ftype)(intptr_t)nvpair_get_##type(cookiep);		\
-	nvlist_remove_nvpair(nvl, cookiep);				\
-	nvpair_free_structure(cookiep);					\
-	return (value);							\
+	const char *name = nvpair_name(cookiep);			\
+	return (nvlist_take_##type(nvl, name));				\
 }
 
 CNVLIST_TAKE(bool, bool, BOOL)
@@ -137,16 +130,8 @@ CNVLIST_TAKE(int, descriptor, DESCRIPTOR)
 ftype                                                                   \
 cnvlist_take_##type(nvlist_t *nvl, void *cookiep, size_t *nitemsp)      \
 {                                                                       \
-        if (nvpair_type(cookiep) != NV_TYPE_##nvtype) {                 \
-		const char *name = nvpair_name(cookiep);		\
-		nvlist_report_missing(NV_TYPE_##nvtype,	name);		\
-	}								\
-        ftype value;							\
-        value = (ftype)(intptr_t)					\
-			nvpair_get_##type(cookiep, nitemsp);		\
-	nvlist_remove_nvpair(nvl, cookiep);				\
-	nvpair_free_structure(cookiep);					\
-        return (value);							\
+	const char *name = nvpair_name(cookiep);			\
+        return (nvlist_take_##type(nvl, name, nitemsp));		\
 }
 
 CNVLIST_TAKE_ARRAY(bool *, bool_array, BOOL_ARRAY)
@@ -162,49 +147,30 @@ CNVLIST_TAKE_ARRAY(int *, descriptor_array, DESCRIPTOR_ARRAY);
 void *
 cnvlist_take_binary(nvlist_t *nvl, void *cookiep, size_t *sizep)
 {
-        if (nvpair_type(cookiep) == NV_TYPE_BINARY) {                 
-                void *value;                                            
-                value = (void *)(intptr_t)				
-				nvpair_get_binary(cookiep, sizep);   	
-       		nvlist_remove_nvpair(nvl, cookiep);                     
-		nvpair_free(cookiep);
-        	return (value);                                         
-	}								
-	return (0);							
+	const char *name = nvpair_name(cookiep);
+        return (nvlist_take_binary(nvl, name, sizep));
 }
 
 
-#define CNVLIST_FREE(type, nvtype)                         		\
-void                                                                  	\
-cnvlist_free_##type(nvlist_t *nvl, void *cookiep)                    	\
-{                                                                     	\
-        if (nvpair_type(cookiep) == NV_TYPE_##nvtype)                 	\
-	        nvlist_free_nvpair(nvl, cookiep);			\
+#define CNVLIST_FREE(type, nvtype)					\
+void									\
+cnvlist_free_##type(nvlist_t *nvl, void *cookiep)			\
+{									\
+	nvlist_free_type(nvl, nvpair_name(cookiep), NV_TYPE_##nvtype);	\
 }
 
 CNVLIST_FREE(bool, BOOL)
 CNVLIST_FREE(number, NUMBER)
 CNVLIST_FREE(string, STRING)
 CNVLIST_FREE(nvlist, NVLIST)
-CNVLIST_FREE(descriptor, DESCRIPTOR)
 CNVLIST_FREE(binary, BINARY);
-
-#undef CNVLIST_FREE
-
-#define CNVLIST_FREE_ARRAY(type, nvtype)                         	\
-void                                                                    \
-cnvlist_free_##type(nvlist_t *nvl, void *cookiep)		        \
-{                                                                       \
-        if (nvpair_type(cookiep) == NV_TYPE_##nvtype)			\
-       		nvlist_free_nvpair(nvl, cookiep);  		        \
-}
-
-CNVLIST_FREE_ARRAY(bool_array, BOOL_ARRAY)
-CNVLIST_FREE_ARRAY(number_array, NUMBER_ARRAY)
-CNVLIST_FREE_ARRAY(string_array, STRING_ARRAY)
-CNVLIST_FREE_ARRAY(nvlist_array, NVLIST_ARRAY)
+CNVLIST_FREE(bool_array, BOOL_ARRAY)
+CNVLIST_FREE(number_array, NUMBER_ARRAY)
+CNVLIST_FREE(string_array, STRING_ARRAY)
+CNVLIST_FREE(nvlist_array, NVLIST_ARRAY)
 #ifndef _kernel
-CNVLIST_FREE_ARRAY(descriptor_array, DESCRIPTOR_ARRAY)
+CNVLIST_FREE(descriptor, DESCRIPTOR)
+CNVLIST_FREE(descriptor_array, DESCRIPTOR_ARRAY)
 #endif
 
-#undef CNVLIST_FREE_ARRAY
+#undef CNVLIST_FREE

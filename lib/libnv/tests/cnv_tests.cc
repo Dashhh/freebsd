@@ -427,6 +427,8 @@ ATF_TEST_CASE_BODY(cnvlist_take_nvlist)
 	nvlist_destroy(nvl);
 }
 
+/* ATF cnvlist_take array tests */
+
 ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_take_bool_array);
 ATF_TEST_CASE_BODY(cnvlist_take_bool_array)
 {
@@ -592,6 +594,229 @@ ATF_TEST_CASE_BODY(cnvlist_take_binary)
 	nvlist_destroy(nvl);
 }
 
+/* ATF cnvlist_free tests */
+
+ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_free_bool);
+ATF_TEST_CASE_BODY(cnvlist_free_bool)
+{
+	nvlist_t *nvl;
+	const char *key;
+	bool value;
+	void *cookie;
+	int type;
+
+	nvl = nvlist_create(0);
+
+	cookie = NULL;
+	key = "name";
+	value = true;
+	nvlist_add_bool(nvl, key, value);
+	nvlist_next(nvl, &type, &cookie);
+
+	cnvlist_free_bool(nvl, cookie);
+	ATF_REQUIRE(nvlist_empty(nvl));
+
+	nvlist_destroy(nvl);
+}
+
+ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_free_number);
+ATF_TEST_CASE_BODY(cnvlist_free_number)
+{
+	nvlist_t *nvl;
+	const char *key;
+	uint64_t value;
+	void *cookie;
+	int type;
+
+	nvl = nvlist_create(0);
+
+	cookie = NULL;
+	key = "name";
+	value = 69;
+	nvlist_add_number(nvl, key, value);
+	nvlist_next(nvl, &type, &cookie);
+
+	cnvlist_free_number(nvl, cookie);
+	ATF_REQUIRE(nvlist_empty(nvl));
+
+	nvlist_destroy(nvl);
+}
+
+ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_free_string);
+ATF_TEST_CASE_BODY(cnvlist_free_string)
+{
+	nvlist_t *nvl;
+	const char *key;
+	const char *value;
+	void *cookie;
+	int type;
+
+	nvl = nvlist_create(0);
+
+	cookie = NULL;
+	key = "name";
+	value = "text";
+	nvlist_add_string(nvl, key, value);
+	nvlist_next(nvl, &type, &cookie);
+
+	cnvlist_free_string(nvl, cookie);
+	ATF_REQUIRE(nvlist_empty(nvl));
+
+	nvlist_destroy(nvl);
+}
+
+ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_free_nvlist);
+ATF_TEST_CASE_BODY(cnvlist_free_nvlist)
+{
+	nvlist_t *nvl;
+	const char *key;
+	nvlist_t *value;
+	void *cookie;
+	int type;
+
+	nvl = nvlist_create(0);
+	value = nvlist_create(0);
+
+	cookie = NULL;
+	nvlist_move_nvlist(nvl, key, value);
+	nvlist_next(nvl, &type, &cookie);
+
+	cnvlist_free_nvlist(nvl, cookie);
+	ATF_REQUIRE(nvlist_empty(nvl));
+
+	nvlist_destroy(nvl);
+}
+
+ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_free_binary);
+ATF_TEST_CASE_BODY(cnvlist_free_binary)
+{
+	nvlist_t *nvl;
+	const char *key;
+	void *in_binary;
+	void *cookie;
+	int type;
+	size_t in_size;
+
+	nvl = nvlist_create(0);
+
+	cookie = NULL;
+	key = "name";
+	in_size = 13;
+	in_binary = malloc(in_size);
+	memset(in_binary, 0xa5, in_size);
+
+	nvlist_add_binary(nvl, key, in_binary, in_size);
+	nvlist_next(nvl, &type, &cookie);
+
+	cnvlist_free_binary(nvl, cookie);
+	ATF_REQUIRE(nvlist_empty(nvl));
+
+	nvlist_destroy(nvl);
+}
+
+/* ATF cnvlist_take array tests */
+
+ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_free_bool_array);
+ATF_TEST_CASE_BODY(cnvlist_free_bool_array)
+{
+	nvlist_t *nvl;
+	bool in_array[16];
+	const char *key;
+	void *cookie;
+	int type, i;
+	size_t nitems;
+
+	for (i = 0; i < 16; i++)
+		in_array[i] = (i % 2 == 0);
+
+	nvl = nvlist_create(0);
+
+	cookie = NULL;
+	key = "name";
+	nvlist_add_bool_array(nvl, key, in_array, 16);
+	nvlist_next(nvl, &type, &cookie);
+
+	cnvlist_free_bool_array(nvl, cookie);
+	ATF_REQUIRE(nvlist_empty(nvl));
+
+	nvlist_destroy(nvl);
+}
+
+ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_free_number_array);
+ATF_TEST_CASE_BODY(cnvlist_free_number_array)
+{
+	nvlist_t *nvl;
+	uint64_t in_array[16];
+	const char *key;
+	void *cookie;
+	int type, i;
+	size_t nitems;
+
+	for (i = 0; i < 16; i++)
+		in_array[i] = i;
+
+	nvl = nvlist_create(0);
+
+	cookie = NULL;
+	key = "name";
+	nvlist_add_number_array(nvl, key, in_array, 16);
+	nvlist_next(nvl, &type, &cookie);
+
+	cnvlist_free_number_array(nvl, cookie);
+	ATF_REQUIRE(nvlist_empty(nvl));
+
+	nvlist_destroy(nvl);
+}
+
+ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_free_string_array);
+ATF_TEST_CASE_BODY(cnvlist_free_string_array)
+{
+	nvlist_t *nvl;
+	const char *in_array[4] = {"inequality", "sucks", ".", ""};
+	const char *key;
+	void *cookie;
+	int type, i;
+	size_t nitems;
+
+	nvl = nvlist_create(0);
+
+	cookie = NULL;
+	key = "name";
+	nvlist_add_string_array(nvl, key, in_array, 4);
+	nvlist_next(nvl, &type, &cookie);
+
+	cnvlist_free_string_array(nvl, cookie);
+	ATF_REQUIRE(nvlist_empty(nvl));
+
+	nvlist_destroy(nvl);
+}
+
+ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_free_nvlist_array);
+ATF_TEST_CASE_BODY(cnvlist_free_nvlist_array)
+{
+	nvlist_t *testnvl[8];
+	nvlist_t *nvl;
+	const char *key;
+	void *cookie;
+	int type;
+	unsigned int i;
+
+	for (i = 0; i < 8; i++)
+		testnvl[i] = nvlist_create(0);
+
+	key = "nvl/nvlist";
+	nvl = nvlist_create(0);
+	cookie = NULL;
+
+	nvlist_add_nvlist_array(nvl, key, (const nvlist_t * const *)testnvl, 8);
+	nvlist_next(nvl, &type, &cookie);
+
+	cnvlist_free_nvlist_array(nvl, cookie);
+	ATF_REQUIRE(nvlist_empty(nvl));
+
+	nvlist_destroy(nvl);
+}
+
 ATF_INIT_TEST_CASES(tp)
 {
 	ATF_ADD_TEST_CASE(tp, cnvlist_get_bool);
@@ -614,4 +839,13 @@ ATF_INIT_TEST_CASES(tp)
 	ATF_ADD_TEST_CASE(tp, cnvlist_take_number_array);
 	ATF_ADD_TEST_CASE(tp, cnvlist_take_string_array);
 	ATF_ADD_TEST_CASE(tp, cnvlist_take_nvlist_array);
+	ATF_ADD_TEST_CASE(tp, cnvlist_free_bool);
+	ATF_ADD_TEST_CASE(tp, cnvlist_free_number);
+	ATF_ADD_TEST_CASE(tp, cnvlist_free_string);
+	ATF_ADD_TEST_CASE(tp, cnvlist_free_nvlist);
+	ATF_ADD_TEST_CASE(tp, cnvlist_free_binary);
+	ATF_ADD_TEST_CASE(tp, cnvlist_free_bool_array);
+	ATF_ADD_TEST_CASE(tp, cnvlist_free_number_array);
+	ATF_ADD_TEST_CASE(tp, cnvlist_free_string_array);
+	ATF_ADD_TEST_CASE(tp, cnvlist_free_nvlist_array);
 }
