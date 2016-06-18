@@ -2,9 +2,6 @@
  * Copyright (c) 2016 Adam Starak <starak.adam@gmail.com>
  * All rights reserved.
  *
- * This software was developed by Pawel Jakub Dawidek under sponsorship from
- * the FreeBSD Foundation.
- *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -44,6 +41,35 @@ __FBSDID("$FreeBSD$");
 
 /* ATF cnvlist_get tests */
 
+static void
+check_nvlist(const nvlist_t *nvl)
+{
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
+}
+
+static void
+check_element(const nvlist_t *nvl, int type, int res_type, const char *key)
+{
+	void *cookie;
+	int dummy;
+
+	cookie = NULL;
+
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE_EQ(type, res_type);
+	ATF_REQUIRE(!nvlist_empty(nvl));
+	ATF_REQUIRE(nvlist_exists(nvl, key));
+
+	nvlist_next(nvl, &dummy, &cookie);
+	nvlist_next(nvl, &dummy, &cookie);
+
+	/* Ensure that it has only our one key. */
+
+	ATF_REQUIRE_EQ(nvlist_next(nvl, &type, &cookie), static_cast<const char *>(NULL));
+}
+
 ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_get_bool);
 ATF_TEST_CASE_BODY(cnvlist_get_bool)
 {
@@ -54,17 +80,22 @@ ATF_TEST_CASE_BODY(cnvlist_get_bool)
 	int type;
 
 	nvl = nvlist_create(0);
+	check_nvlist(nvl);
 
 	cookie = NULL;
 	key = "name";
 	value = true;
+
 	nvlist_add_bool(nvl, key, value);
 	nvlist_next(nvl, &type, &cookie);
+	check_element(nvl, type, NV_TYPE_BOOL, key);
+	ATF_REQUIRE(nvlist_exists_bool(nvl, key));
 
 	ATF_REQUIRE_EQ(cnvlist_get_bool(cookie), value);
 
 	nvlist_destroy(nvl);
 }
+
 ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_get_number);
 ATF_TEST_CASE_BODY(cnvlist_get_number)
 {
@@ -75,17 +106,22 @@ ATF_TEST_CASE_BODY(cnvlist_get_number)
 	int type;
 
 	nvl = nvlist_create(0);
+	check_nvlist(nvl);
 
 	cookie = NULL;
 	key = "name";
 	value = 420;
+
 	nvlist_add_number(nvl, key, value);
 	nvlist_next(nvl, &type, &cookie);
+	check_element(nvl, type, NV_TYPE_NUMBER, key);
+	ATF_REQUIRE(nvlist_exists_number(nvl, key));
 
 	ATF_REQUIRE_EQ(cnvlist_get_number(cookie), value);
 
 	nvlist_destroy(nvl);
 }
+
 
 ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_get_string);
 ATF_TEST_CASE_BODY(cnvlist_get_string)
@@ -97,12 +133,16 @@ ATF_TEST_CASE_BODY(cnvlist_get_string)
 	int type;
 
 	nvl = nvlist_create(0);
+	check_nvlist(nvl);
 
 	cookie = NULL;
 	key = "name";
 	value = "text";
+
 	nvlist_add_string(nvl, key, value);
 	nvlist_next(nvl, &type, &cookie);
+	check_element(nvl, type, NV_TYPE_STRING, key);
+	ATF_REQUIRE(nvlist_exists_string(nvl, key));
 
 	ATF_REQUIRE_EQ(strcmp(cnvlist_get_string(cookie), value), 0);
 
@@ -112,22 +152,52 @@ ATF_TEST_CASE_BODY(cnvlist_get_string)
 ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_get_nvlist);
 ATF_TEST_CASE_BODY(cnvlist_get_nvlist)
 {
-	nvlist_t *nvl;
-	const char *key;
-	nvlist_t *value;
+	nvlist_t *nvl, *value;
+	const nvlist_t *result;
+	const char *key, *subkey;
 	void *cookie;
 	int type;
 
 	nvl = nvlist_create(0);
+	check_nvlist(nvl);
+
 	value = nvlist_create(0);
+	check_nvlist(value);
+
+	key = "name";
+	subkey = "subname";
+	cookie = NULL;
+
+	/* Add null to 'value' nvlist. */
+
+	nvlist_add_null(value, subkey);
+	nvlist_next(value, &type, &cookie);
+	check_element(value, type, NV_TYPE_NULL, subkey);
+	ATF_REQUIRE(nvlist_exists_null(value, subkey));
+
+	/* Add 'value' nvlist. */
 
 	cookie = NULL;
 	nvlist_add_nvlist(nvl, key, value);
 	nvlist_next(nvl, &type, &cookie);
+	check_element(nvl, type, NV_TYPE_NVLIST, key);
+	ATF_REQUIRE(nvlist_exists_nvlist(nvl, key));
 
-	ATF_REQUIRE_EQ(cnvlist_get_nvlist(cookie), nvlist_get_nvlist(nvl, key));
+	/* Assuming nvlist_get_nvlist is correct check if cnvlist returns the same pointer. */
+
+	result = cnvlist_get_nvlist(cookie);
+	ATF_REQUIRE_EQ(result, nvlist_get_nvlist(nvl, key));
+	ATF_REQUIRE(result != value);
+
+	/* Validate data inside nvlist. */
+
+	cookie = NULL;
+	nvlist_next(result, &type, &cookie);
+	check_element(result, type, NV_TYPE_NULL, subkey);
+	ATF_REQUIRE(nvlist_exists_null(result, subkey));
 
 	nvlist_destroy(nvl);
+	nvlist_destroy(value);
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_get_descriptor);
@@ -139,11 +209,15 @@ ATF_TEST_CASE_BODY(cnvlist_get_descriptor)
 	int type;
 
 	nvl = nvlist_create(0);
+	check_nvlist(nvl);
 
 	cookie = NULL;
 	key = "name";
+
 	nvlist_add_descriptor(nvl, key, STDERR_FILENO);
 	nvlist_next(nvl, &type, &cookie);
+	check_element(nvl, type, NV_TYPE_DESCRIPTOR, key);
+	ATF_REQUIRE(nvlist_exists_descriptor(nvl, key));
 
 	ATF_REQUIRE_EQ(fd_is_valid(cnvlist_get_descriptor(cookie)), 1);
 
@@ -162,15 +236,19 @@ ATF_TEST_CASE_BODY(cnvlist_get_binary)
 	size_t in_size, out_size;
 
 	nvl = nvlist_create(0);
+	check_nvlist(nvl);
 
 	cookie = NULL;
 	key = "name";
 	in_size = 13;
 	in_binary = malloc(in_size);
+	ATF_REQUIRE(in_binary != NULL);
 	memset(in_binary, 0xa5, in_size);
 
 	nvlist_add_binary(nvl, key, in_binary, in_size);
 	nvlist_next(nvl, &type, &cookie);
+	check_element(nvl, type, NV_TYPE_BINARY, key);
+	ATF_REQUIRE(nvlist_exists_binary(nvl, key));
 
 	out_binary = cnvlist_get_binary(cookie, &out_size);
 	ATF_REQUIRE_EQ(out_size, in_size);
@@ -196,14 +274,19 @@ ATF_TEST_CASE_BODY(cnvlist_get_bool_array)
 		in_array[i] = (i % 2 == 0);
 
 	nvl = nvlist_create(0);
+	check_nvlist(nvl);
 
 	cookie = NULL;
 	key = "name";
 	nvlist_add_bool_array(nvl, key, in_array, 16);
 	nvlist_next(nvl, &type, &cookie);
 
+	check_element(nvl, type, NV_TYPE_BOOL_ARRAY, key);
+	ATF_REQUIRE(nvlist_exists_bool_array(nvl, key));
+
 	out_array = cnvlist_get_bool_array(cookie, &nitems);
 	ATF_REQUIRE_EQ(nitems, 16);
+	ATF_REQUIRE(out_array != NULL);
 	for (i = 0; i < 16; i++)
 		ATF_REQUIRE_EQ(out_array[i], in_array[i]);
 
@@ -225,13 +308,16 @@ ATF_TEST_CASE_BODY(cnvlist_get_number_array)
 		in_array[i] = i;
 
 	nvl = nvlist_create(0);
+	check_nvlist(nvl);
 
 	cookie = NULL;
 	key = "name";
 	nvlist_add_number_array(nvl, key, in_array, 16);
 	nvlist_next(nvl, &type, &cookie);
+	check_element(nvl, type, NV_TYPE_NUMBER_ARRAY, key);
 
 	out_array = cnvlist_get_number_array(cookie, &nitems);
+	ATF_REQUIRE(out_array != NULL);
 	ATF_REQUIRE_EQ(nitems, 16);
 	for (i = 0; i < 16; i++)
 		ATF_REQUIRE_EQ(out_array[i], in_array[i]);
@@ -251,14 +337,18 @@ ATF_TEST_CASE_BODY(cnvlist_get_string_array)
 	size_t nitems;
 
 	nvl = nvlist_create(0);
+	check_nvlist(nvl);
 
 	cookie = NULL;
 	key = "name";
+
 	nvlist_add_string_array(nvl, key, in_array, 4);
 	nvlist_next(nvl, &type, &cookie);
+	check_element(nvl, type, NV_TYPE_STRING_ARRAY, key);
 
 	out_array = cnvlist_get_string_array(cookie, &nitems);
 	ATF_REQUIRE_EQ(nitems, 4);
+	ATF_REQUIRE(out_array != NULL);
 	for (i = 0; i < 4; i++)
 		ATF_REQUIRE_EQ(strcmp(out_array[i], in_array[i]), 0);
 
@@ -274,23 +364,57 @@ ATF_TEST_CASE_BODY(cnvlist_get_nvlist_array)
 	const nvlist_t * const *out_result;
 	void *cookie;
 	const char *key;
+	const char *subkeys;
 	int type, i;
 	size_t nitems;
 
 	nvl = nvlist_create(0);
-	for (i = 0; i < 6; i++)
+	check_nvlist(nvl);
+
+	subkeys = "123456";
+	for (i = 0; i < 6; i++) {
 		in_array[i] = nvlist_create(0);
+		check_nvlist(in_array[i]);
+
+		cookie = NULL;
+
+		nvlist_add_null(in_array[i], subkeys+i);
+		nvlist_next(in_array[i], &type, &cookie);
+		check_element(in_array[i], type, NV_TYPE_NULL, subkeys+i);
+		ATF_REQUIRE(nvlist_exists_null(in_array[i], subkeys+i));
+	}
 
 	cookie = NULL;
 	key = "name";
+
 	nvlist_add_nvlist_array(nvl, key, in_array, 6);
 	nvlist_next(nvl, &type, &cookie);
+	check_element(nvl, type, NV_TYPE_NVLIST_ARRAY, key);
+
+	/* Get nvlist array by cnvlist function. */
 
 	out_array = cnvlist_get_nvlist_array(cookie, &nitems);
+	ATF_REQUIRE(out_array != NULL);
 	ATF_REQUIRE_EQ(nitems, 6);
+
+	/* Get nvlist array by nvlist function. */
+
 	out_result = nvlist_get_nvlist_array(nvl, key, &nitems);
-	for (i = 0; i < 6; i++)
-		ATF_REQUIRE_EQ(out_array[i], out_result[i]);
+	ATF_REQUIRE(out_result != NULL);
+	ATF_REQUIRE_EQ(nitems, 6);
+
+	/* Validate assuming that nvlist returned a proper pointer */
+
+	for (i = 0; i < 6; i++) {
+		ATF_REQUIRE_EQ(out_result[i], out_array[i]);
+		ATF_REQUIRE(out_array[i] != in_array[i]);
+
+		/* Validate data inside nvlist. */
+		cookie = NULL;
+		nvlist_next(out_array[i], &type, &cookie);
+		check_element(out_array[i], type, NV_TYPE_NULL, subkeys+i);
+		ATF_REQUIRE(nvlist_exists_null(out_array[i], subkeys+i));
+	}
 
 	nvlist_destroy(nvl);
 }
@@ -307,6 +431,8 @@ ATF_TEST_CASE_BODY(cnvlist_get_descriptor_array)
 	size_t nitems;
 
 	nvl = nvlist_create(0);
+	check_nvlist(nvl);
+
 	cookie = NULL;
 	key = "name";
 	count = 50;
@@ -320,9 +446,11 @@ ATF_TEST_CASE_BODY(cnvlist_get_descriptor_array)
 
 	nvlist_add_descriptor_array(nvl, key, in_array, count);
 	nvlist_next(nvl, &type, &cookie);
+	check_element(nvl, type, NV_TYPE_DESCRIPTOR_ARRAY, key);
 
 	out_array = cnvlist_get_descriptor_array(cookie, &nitems);
 	ATF_REQUIRE_EQ(nitems, count);
+	ATF_REQUIRE(out_array != NULL);
 	for (i = 0; i < count; i++)
 		ATF_REQUIRE_EQ(fd_is_valid(out_array[i]), 1);
 

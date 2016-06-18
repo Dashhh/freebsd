@@ -58,10 +58,10 @@ __BEGIN_DECLS
 
 bool			 cnvlist_get_bool(void *cookiep);
 uint64_t		 cnvlist_get_number(void *cookiep);
-const char  	       	*cnvlist_get_string(void *cookiep);
-const nvlist_t	       	*cnvlist_get_nvlist(void *cookiep);
-const void	       	*cnvlist_get_binary(void *cookiep, size_t *sizep);
-const bool	       	*cnvlist_get_bool_array(void *cookiep, size_t *nitemsp);
+const char		*cnvlist_get_string(void *cookiep);
+const nvlist_t		*cnvlist_get_nvlist(void *cookiep);
+const void		*cnvlist_get_binary(void *cookiep, size_t *sizep);
+const bool		*cnvlist_get_bool_array(void *cookiep, size_t *nitemsp);
 const uint64_t		*cnvlist_get_number_array(void *cookiep, size_t *nitemsp);
 const char * const	*cnvlist_get_string_array(void *cookiep, size_t *nitemsp);
 const nvlist_t * const	*cnvlist_get_nvlist_array(void *cookiep, size_t *nitemsp);
@@ -77,14 +77,14 @@ const int		*cnvlist_get_descriptor_array(void *cookiep, size_t *nitemsp);
  * The caller is responsible for freeing received data.
  */
 
-bool	   		  cnvlist_take_bool(nvlist_t *nvl, void *cookiep);
-uint64_t   		  cnvlist_take_number(nvlist_t *nvl, void *cookiep);
-char	   		 *cnvlist_take_string(nvlist_t *nvl, void *cookiep);
-nvlist_t   		 *cnvlist_take_nvlist(nvlist_t *nvl, void *cookiep);
-void	   		 *cnvlist_take_binary(nvlist_t *nvl, void *cookiep, size_t *sizep);
+bool			  cnvlist_take_bool(nvlist_t *nvl, void *cookiep);
+uint64_t		  cnvlist_take_number(nvlist_t *nvl, void *cookiep);
+char			 *cnvlist_take_string(nvlist_t *nvl, void *cookiep);
+nvlist_t		 *cnvlist_take_nvlist(nvlist_t *nvl, void *cookiep);
+void			 *cnvlist_take_binary(nvlist_t *nvl, void *cookiep, size_t *sizep);
 bool			 *cnvlist_take_bool_array(nvlist_t *nvl, void *cookiep, size_t *nitemsp);
 uint64_t		 *cnvlist_take_number_array(nvlist_t *nvl, void *cookiep, size_t *nitemsp);
-char 			**cnvlist_take_string_array(nvlist_t *nvl, void *cookiep, size_t *nitemsp);
+char			**cnvlist_take_string_array(nvlist_t *nvl, void *cookiep, size_t *nitemsp);
 nvlist_t		**cnvlist_take_nvlist_array(nvlist_t *nvl, void *cookiep, size_t *nitemsp);
 #ifndef _KERNEL
 int			  cnvlist_take_descriptor(nvlist_t *nvl, void *cookiep);
@@ -96,12 +96,12 @@ int			 *cnvlist_take_descriptor_array(nvlist_t *nvl, void *cookiep, size_t *nite
  * and frees memory associated with it.
  */
 
-void 	cnvlist_free_bool(nvlist_t *nvl, void *cookiep);
-void 	cnvlist_free_number(nvlist_t *nvl, void *cookiep);
-void 	cnvlist_free_string(nvlist_t *nvl, void *cookiep);
-void 	cnvlist_free_nvlist(nvlist_t *nvl, void *cookiep);
-void 	cnvlist_free_binary(nvlist_t *nvl, void *cookiep);
-void 	cnvlist_free_descriptor(nvlist_t *nvl, void *cookiep);
+void	cnvlist_free_bool(nvlist_t *nvl, void *cookiep);
+void	cnvlist_free_number(nvlist_t *nvl, void *cookiep);
+void	cnvlist_free_string(nvlist_t *nvl, void *cookiep);
+void	cnvlist_free_nvlist(nvlist_t *nvl, void *cookiep);
+void	cnvlist_free_binary(nvlist_t *nvl, void *cookiep);
+void	cnvlist_free_descriptor(nvlist_t *nvl, void *cookiep);
 void	cnvlist_free_bool_array(nvlist_t *nvl, void *cookiep);
 void	cnvlist_free_number_array(nvlist_t *nvl, void *cookiep);
 void	cnvlist_free_string_array(nvlist_t *nvl, void *cookiep);
