@@ -13,7 +13,6 @@ ATF_TESTS_CXX=	\
 #TAP_TESTS_C+=	nvlist_move_test
 #TAP_TESTS_C+=	nvlist_send_recv_test
 
-CXXFLAGS=	-I/usr/local/include/
 LIBADD+=	nv
 
 WARNS?=		3
