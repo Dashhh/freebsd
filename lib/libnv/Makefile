@@ -14,6 +14,7 @@ CFLAGS+=-I${.CURDIR}/../../sys -I${.CURDIR}
 SRCS=	dnvlist.c
 SRCS+=	msgio.c
 SRCS+=	nvlist.c
+SRCS+=	nvlist_json.c
 SRCS+=	nvpair.c
 
 .if ${MK_TESTS} != "no"
