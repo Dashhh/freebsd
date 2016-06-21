@@ -39,15 +39,7 @@ __FBSDID("$FreeBSD$");
 
 #define	fd_is_valid(fd)	(fcntl((fd), F_GETFL) != -1 || errno != EBADF)
 
-/* ATF cnvlist_get tests */
-
-static void
-check_nvlist(const nvlist_t *nvl)
-{
-	ATF_REQUIRE(nvl != NULL);
-	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
-	ATF_REQUIRE(nvlist_empty(nvl));
-}
+/* ATF cnvlist_get tests. */
 
 static void
 check_element(const nvlist_t *nvl, int type, int res_type, const char *key)
@@ -95,7 +87,9 @@ ATF_TEST_CASE_BODY(cnvlist_get_bool)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -121,7 +115,9 @@ ATF_TEST_CASE_BODY(cnvlist_get_number)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -148,7 +144,9 @@ ATF_TEST_CASE_BODY(cnvlist_get_string)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -174,10 +172,14 @@ ATF_TEST_CASE_BODY(cnvlist_get_nvlist)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	value = nvlist_create(0);
-	check_nvlist(value);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	key = "name";
 	subkey = "subname";
@@ -224,7 +226,9 @@ ATF_TEST_CASE_BODY(cnvlist_get_descriptor)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -251,7 +255,9 @@ ATF_TEST_CASE_BODY(cnvlist_get_binary)
 	size_t in_size, out_size;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -290,7 +296,9 @@ ATF_TEST_CASE_BODY(cnvlist_get_bool_array)
 		in_array[i] = (i % 2 == 0);
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -324,7 +332,9 @@ ATF_TEST_CASE_BODY(cnvlist_get_number_array)
 		in_array[i] = i;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -355,7 +365,9 @@ ATF_TEST_CASE_BODY(cnvlist_get_string_array)
 	size_t nitems;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -390,12 +402,16 @@ ATF_TEST_CASE_BODY(cnvlist_get_nvlist_array)
 	size_t nitems;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	subkeys = "123456";
 	for (i = 0; i < 6; i++) {
 		in_array[i] = nvlist_create(0);
-		check_nvlist(in_array[i]);
+		ATF_REQUIRE(in_array[i] != NULL);
+		ATF_REQUIRE_EQ(nvlist_error(in_array[i]), 0);
+		ATF_REQUIRE(nvlist_empty(in_array[i]));
 
 		cookie = NULL;
 
@@ -453,7 +469,9 @@ ATF_TEST_CASE_BODY(cnvlist_get_descriptor_array)
 	size_t nitems;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -492,7 +510,9 @@ ATF_TEST_CASE_BODY(cnvlist_take_bool)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -519,7 +539,9 @@ ATF_TEST_CASE_BODY(cnvlist_take_number)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -547,7 +569,9 @@ ATF_TEST_CASE_BODY(cnvlist_take_string)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -576,10 +600,14 @@ ATF_TEST_CASE_BODY(cnvlist_take_nvlist)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	value = nvlist_create(0);
-	check_nvlist(value);
+	ATF_REQUIRE(value != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(value), 0);
+	ATF_REQUIRE(nvlist_empty(value));
 
 	key = "name";
 	subkey = "subname";
@@ -632,7 +660,9 @@ ATF_TEST_CASE_BODY(cnvlist_take_bool_array)
 		in_array[i] = (i % 2 == 0);
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -669,7 +699,9 @@ ATF_TEST_CASE_BODY(cnvlist_take_number_array)
 		in_array[i] = i;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -703,7 +735,9 @@ ATF_TEST_CASE_BODY(cnvlist_take_string_array)
 	size_t nitems;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -740,7 +774,9 @@ ATF_TEST_CASE_BODY(cnvlist_take_nvlist_array)
 
 	for (i = 0; i < 8; i++) {
 		testnvl[i] = nvlist_create(0);
-		check_nvlist(testnvl[i]);
+		ATF_REQUIRE(testnvl[i] != NULL);
+		ATF_REQUIRE_EQ(nvlist_error(testnvl[i]), 0);
+		ATF_REQUIRE(nvlist_empty(testnvl[i]));
 		nvlist_add_string(testnvl[i], "nvl/string", somestr[i]);
 
 		cookie = NULL;
@@ -749,7 +785,9 @@ ATF_TEST_CASE_BODY(cnvlist_take_nvlist_array)
 	}
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	key = "nvl/nvlist";
 	cookie = NULL;
@@ -794,7 +832,9 @@ ATF_TEST_CASE_BODY(cnvlist_take_binary)
 	size_t in_size, out_size;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -830,7 +870,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_bool)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -858,7 +900,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_number)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -887,7 +931,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_string)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -914,10 +960,14 @@ ATF_TEST_CASE_BODY(cnvlist_free_nvlist)
 	int type;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	value = nvlist_create(0);
-	check_nvlist(value);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	key = "name";
 	subkey = "subname";
@@ -957,7 +1007,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_binary)
 	size_t in_size, out_size;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -995,7 +1047,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_bool_array)
 		in_array[i] = (i % 2 == 0);
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -1027,7 +1081,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_number_array)
 		in_array[i] = i;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -1056,7 +1112,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_string_array)
 	size_t nitems;
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	cookie = NULL;
 	key = "name";
@@ -1087,7 +1145,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_nvlist_array)
 
 	for (i = 0; i < 8; i++) {
 		testnvl[i] = nvlist_create(0);
-		check_nvlist(testnvl[i]);
+		ATF_REQUIRE(testnvl[i] != NULL);
+		ATF_REQUIRE_EQ(nvlist_error(testnvl[i]), 0);
+		ATF_REQUIRE(nvlist_empty(testnvl[i]));
 		nvlist_add_string(testnvl[i], "nvl/string", somestr[i]);
 
 		cookie = NULL;
@@ -1096,7 +1156,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_nvlist_array)
 	}
 
 	nvl = nvlist_create(0);
-	check_nvlist(nvl);
+	ATF_REQUIRE(nvl != NULL);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
 
 	key = "nvl/nvlist";
 	cookie = NULL;
