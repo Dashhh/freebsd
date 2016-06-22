@@ -69,132 +69,276 @@ __FBSDID("$FreeBSD$");
 #define COMMA ","
 #define END "\0"
 
-struct json
+
+struct string
 {
-	char *string;
+	char *ptr;
 	size_t position;
 	size_t size;
 };
 
+static void insert_nvlist(struct string *jstring, const nvlist_t *nvl);
+
 static void
-int_to_string(int number, char *space)
+init_string(struct string *string)
 {
-	memset(space, 0, sizeof(*space)*65);
-	snprintf(space, 65, "%d", number);
+	string->position = 0;
+	string->size = INITIAL_SIZE;
+	string->ptr = malloc(sizeof(*(string->ptr))*INITIAL_SIZE);
 }
 
 static void
-number_to_string(uint64_t number, char *space)
-{
-	memset(space, 0, sizeof(*space)*65);
-	snprintf(space, 65, "%" PRIu64, number);
-}
-
-static char *
-preprocess_string(const char *value)
-{
-	size_t size;
-	char *result;
-
-	size = strlen(value)+3;
-	result = malloc(sizeof(*result)*size);
-	result[0] = *QUOTE;
-	strcpy(result+1, value);
-	result[size-2] = *QUOTE;
-	result[size-1] = *END;
-	return result;
-}
-
-static void
-expand_string(struct json *jstring, size_t size)
+expand_string(struct string *jstring, size_t size)
 {
 	if (jstring->size - jstring->position >= size)
 		return;
 	while (jstring->size - jstring->position < size) {
-		jstring->string = realloc(jstring->string, sizeof(*jstring->string)*jstring->size*2);
+		jstring->ptr = realloc(jstring->ptr, sizeof(*jstring->ptr)*jstring->size*2);
 		jstring->size *= 2;
 	}
 }
 
 static void
-insert_text(struct json *jstring, const char *text)
+insert_text(struct string *jstring, const char *text)
 {
 	expand_string(jstring, strlen(text));
-	strcpy(jstring->string+jstring->position, text);
+	strcpy(jstring->ptr+jstring->position, text);
 	jstring->position += strlen(text);
 }
 
-
-static void
-single_insert(struct json *jstring, const char *name, const char *value, const char *type)
+static size_t
+number_size(uint64_t number)
 {
-	insert_text(jstring, START_BRACE);
-	insert_text(jstring, KEY);
-	insert_text(jstring, QUOTE);
-	insert_text(jstring, name);
-	insert_text(jstring, QUOTE);
-	insert_text(jstring, COMMA);
-	insert_text(jstring, VALUE);
-	insert_text(jstring, value);
-	insert_text(jstring, COMMA);
-	insert_text(jstring, TYPE);
-	insert_text(jstring, type);
-	insert_text(jstring, END_BRACE);
-	insert_text(jstring, COMMA);
+	size_t size;
+
+	size = number == 0 ? 2 : 1;
+	while (number != 0) {
+		size++;
+		number /= 10;
+	}
+	return size;
 }
 
 static void
-parse_nvlist(const nvlist_t *nvl, struct json *jstring)
+insert_type(struct string *jstring, const char *type)
+{
+	insert_text(jstring, START_BRACE);
+	insert_text(jstring, TYPE);
+	insert_text(jstring, QUOTE);
+	insert_text(jstring, type);
+	insert_text(jstring, QUOTE);
+	insert_text(jstring, COMMA);
+	insert_text(jstring, VALUE);
+}
+
+static void
+insert_key(struct string *jstring, const char *key)
+{
+	insert_text(jstring, COMMA);
+	insert_text(jstring, KEY);
+	insert_text(jstring, QUOTE);
+	insert_text(jstring, key);
+	insert_text(jstring, QUOTE);
+	insert_text(jstring, END_BRACE);
+	insert_text(jstring, COMMA);
+
+}
+
+static void
+insert_null(struct string *jstring)
+{
+	insert_text(jstring, QUOTE);
+	insert_text(jstring, QUOTE);
+}
+
+static void
+insert_bool(struct string *jstring, const bool value)
+{
+	if (value)
+		insert_text(jstring, "1");
+	else
+		insert_text(jstring, "0");
+}
+
+// Co gdy asprintf sie nie powiedzie?
+static void
+insert_number(struct string *jstring, uint64_t number)
+{
+	size_t size;
+
+	size = number_size(number);
+	expand_string(jstring, size);
+	snprintf(jstring->ptr+jstring->position, size, "%"PRIu64, number);
+	jstring->position += size-1;
+}
+
+static void
+insert_string(struct string *jstring, const char *string)
+{
+	size_t size;
+
+	size = strlen(string)+1;
+	insert_text(jstring, QUOTE);
+	expand_string(jstring, size);
+	snprintf(jstring->ptr+jstring->position, size, "%s", string);
+	jstring->position += size-1;
+	insert_text(jstring, QUOTE);
+}
+
+static void
+insert_descriptor(struct string *jstring, int fd)
+{
+	insert_number(jstring, fd);
+}
+
+static void
+insert_bool_array(struct string *jstring, const nvpair_t *nvp)
+{
+	size_t size;
+	unsigned i;
+	const bool *bools;
+
+	bools = nvpair_get_bool_array(nvp, &size);
+	insert_text(jstring, START_BRACKET);
+	for (i = 0; i < size-1; i++) {
+		insert_bool(jstring, bools[i]);
+		insert_text(jstring, COMMA);
+	}
+	insert_bool(jstring, bools[i]);
+	insert_text(jstring, END_BRACKET);
+}
+
+static void
+insert_number_array(struct string *jstring, const nvpair_t *nvp)
+{
+	size_t size;
+	unsigned i;
+	const uint64_t *numbers;
+
+	numbers = nvpair_get_number_array(nvp, &size);
+	insert_text(jstring, START_BRACKET);
+	for (i = 0; i < size-1; i++) {
+		insert_number(jstring, numbers[i]);
+		insert_text(jstring, COMMA);
+	}
+	insert_number(jstring, numbers[i]);
+	insert_text(jstring, END_BRACKET);
+}
+
+static void
+insert_string_array(struct string *jstring, const nvpair_t *nvp)
+{
+	size_t size;
+	unsigned i;
+	const char * const *strings;
+
+	strings = nvpair_get_string_array(nvp, &size);
+	insert_text(jstring, START_BRACKET);
+	for (i = 0; i < size-1; i++) {
+		insert_string(jstring, strings[i]);
+		insert_text(jstring, COMMA);
+	}
+	insert_string(jstring, strings[i]);
+	insert_text(jstring, END_BRACKET);
+}
+
+static void
+insert_descriptor_array(struct string *jstring, const nvpair_t *nvp)
+{
+	size_t size;
+	unsigned i;
+	const int *descriptors;
+
+	descriptors = nvpair_get_descriptor_array(nvp, &size);
+	insert_text(jstring, START_BRACKET);
+	for (i = 0; i < size-1; i++) {
+		insert_descriptor(jstring, descriptors[i]);
+		insert_text(jstring, COMMA);
+	}
+	insert_descriptor(jstring, descriptors[i]);
+	insert_text(jstring, END_BRACKET);
+}
+
+static void
+insert_nvlist_array(struct string *jstring, const nvpair_t *nvp)
+{
+	size_t size;
+	unsigned i;
+	const nvlist_t * const *nvlists;
+
+	nvlists = nvpair_get_nvlist_array(nvp, &size);
+	insert_text(jstring, START_BRACKET);
+	for (i = 0; i < size-1; i++) {
+		insert_nvlist(jstring, nvlists[i]);
+		insert_text(jstring, COMMA);
+	}
+	insert_nvlist(jstring, nvlists[i]);
+	insert_text(jstring, END_BRACKET);
+}
+
+static void
+insert_nvlist(struct string *jstring, const nvlist_t *nvl)
 {
 	void *cookie;
 	int type;
-	char number[65], stype[65];
-	char *string;
-	const char *name;
 	cookie = NULL;
 
 	insert_text(jstring, START_BRACKET);
 	while (nvlist_next(nvl, &type, &cookie) != NULL) {
-		name = nvpair_name(cookie);
-		int_to_string(type, stype);
+		insert_type(jstring, nvpair_type_string(type));
 		switch (type) {
 		case NV_TYPE_NULL:
-			single_insert(jstring, name, "\"\"", stype);
+			insert_null(jstring);
 			break;
 		case NV_TYPE_BOOL:
-			int_to_string(nvpair_get_bool(cookie), number);
-			single_insert(jstring, name, number, stype);
+			insert_bool(jstring, nvpair_get_bool(cookie));
 			break;
 		case NV_TYPE_NUMBER:
-			number_to_string(nvpair_get_number(cookie), number);
-			single_insert(jstring, name, number, stype);
+			insert_number(jstring, nvpair_get_number(cookie));
 			break;
 		case NV_TYPE_STRING:
-			string = preprocess_string(nvpair_get_string(cookie));
-			single_insert(jstring, name, string, stype);
-			free(string);
+			insert_string(jstring, nvpair_get_string(cookie));
+			break;
+		case NV_TYPE_NVLIST:
+			insert_nvlist(jstring, nvpair_get_nvlist(cookie));
+			break;
+		case NV_TYPE_DESCRIPTOR:
+			insert_descriptor(jstring, nvpair_get_descriptor(cookie));
+			break;
+		case NV_TYPE_BOOL_ARRAY:
+			insert_bool_array(jstring, cookie);
+			break;
+		case NV_TYPE_NUMBER_ARRAY:
+			insert_number_array(jstring, cookie);
+			break;
+		case NV_TYPE_STRING_ARRAY:
+			insert_string_array(jstring, cookie);
+			break;
+		case NV_TYPE_NVLIST_ARRAY:
+			insert_nvlist_array(jstring, cookie);
+			break;
+		case NV_TYPE_DESCRIPTOR_ARRAY:
+			insert_descriptor_array(jstring, cookie);
 			break;
 		default:
 			break;
 		}
-		printf("dodano\n");
+		insert_key(jstring, nvpair_name(cookie));
+		printf("%s\n\n", jstring->ptr);
 	}
-	jstring->position--;
+	if (jstring->ptr[jstring->position-1] == *COMMA)
+		jstring->position--;
 	insert_text(jstring, END_BRACKET);
 	insert_text(jstring, END);
-	printf("Wykorzystano %zu\n", jstring->position);
 }
 
 char *
 nvlist_to_json(const nvlist_t *nvl)
 {
-	struct json jstring;
+	struct string jstring;
 
-	jstring.position = 0;
-	jstring.size = INITIAL_SIZE;
-	jstring.string = malloc(sizeof(*jstring.string)*INITIAL_SIZE);
+	init_string(&jstring);
+	insert_nvlist(&jstring, nvl);
 
-	if (nvl != NULL)
-		parse_nvlist(nvl, &jstring);
-	return jstring.string;
+	return (jstring.ptr);
 }
