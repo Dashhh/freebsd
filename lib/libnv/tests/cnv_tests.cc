@@ -590,12 +590,24 @@ ATF_TEST_CASE_BODY(cnvlist_take_bool)
 
 	nvlist_add_bool(nvl, key, value);
 	ATF_REQUIRE_EQ(strcmp(key, nvlist_next(nvl, &type, &cookie)), 0);
-	check_element(nvl, type, NV_TYPE_BOOL, key);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE_EQ(type, NV_TYPE_BOOL);
+	ATF_REQUIRE(!nvlist_empty(nvl));
+	ATF_REQUIRE(nvlist_exists(nvl, key));
 	ATF_REQUIRE(nvlist_exists_bool(nvl, key));
+	ATF_REQUIRE_EQ(nvlist_next(nvl, &type, &cookie), static_cast<const char *>(NULL));
 
+	cookie = NULL;
+	ATF_REQUIRE_EQ(strcmp(key, nvlist_next(nvl, &type, &cookie)), 0);
 	ATF_REQUIRE_EQ(cnvlist_take_bool(nvl, cookie), value);
 
-	check_empty(nvl, key);
+	cookie = NULL;
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
+	ATF_REQUIRE(!nvlist_exists(nvl, key));
+	ATF_REQUIRE(!nvlist_exists_bool(nvl, key));
+	ATF_REQUIRE_EQ(nvlist_next(nvl, &type, &cookie), static_cast<const char *>(NULL));
+
 	nvlist_destroy(nvl);
 }
 
@@ -619,12 +631,24 @@ ATF_TEST_CASE_BODY(cnvlist_take_number)
 
 	nvlist_add_number(nvl, key, value);
 	ATF_REQUIRE_EQ(strcmp(key, nvlist_next(nvl, &type, &cookie)), 0);
-	check_element(nvl, type, NV_TYPE_NUMBER, key);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE_EQ(type, NV_TYPE_NUMBER);
+	ATF_REQUIRE(!nvlist_empty(nvl));
+	ATF_REQUIRE(nvlist_exists(nvl, key));
 	ATF_REQUIRE(nvlist_exists_number(nvl, key));
+	ATF_REQUIRE_EQ(nvlist_next(nvl, &type, &cookie), static_cast<const char *>(NULL));
 
+	cookie = NULL;
+	ATF_REQUIRE_EQ(strcmp(key, nvlist_next(nvl, &type, &cookie)), 0);
 	ATF_REQUIRE_EQ(cnvlist_take_number(nvl, cookie), value);
 
-	check_empty(nvl, key);
+	cookie = NULL;
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
+	ATF_REQUIRE(!nvlist_exists(nvl, key));
+	ATF_REQUIRE(!nvlist_exists_number(nvl, key));
+	ATF_REQUIRE_EQ(nvlist_next(nvl, &type, &cookie), static_cast<const char *>(NULL));
+
 	nvlist_destroy(nvl);
 }
 
@@ -649,14 +673,26 @@ ATF_TEST_CASE_BODY(cnvlist_take_string)
 
 	nvlist_add_string(nvl, key, value);
 	ATF_REQUIRE_EQ(strcmp(key, nvlist_next(nvl, &type, &cookie)), 0);
-	check_element(nvl, type, NV_TYPE_STRING, key);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE_EQ(type, NV_TYPE_STRING);
+	ATF_REQUIRE(!nvlist_empty(nvl));
+	ATF_REQUIRE(nvlist_exists(nvl, key));
 	ATF_REQUIRE(nvlist_exists_string(nvl, key));
+	ATF_REQUIRE_EQ(nvlist_next(nvl, &type, &cookie), static_cast<const char *>(NULL));
 
+	cookie = NULL;
+	ATF_REQUIRE_EQ(strcmp(key, nvlist_next(nvl, &type, &cookie)), 0);
 	out_string = cnvlist_take_string(nvl, cookie);
 	ATF_REQUIRE(out_string != NULL);
 	ATF_REQUIRE_EQ(strcmp(out_string, value), 0);
 
-	check_empty(nvl, key);
+	cookie = NULL;
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE(nvlist_empty(nvl));
+	ATF_REQUIRE(!nvlist_exists(nvl, key));
+	ATF_REQUIRE(!nvlist_exists_string(nvl, key));
+	ATF_REQUIRE_EQ(nvlist_next(nvl, &type, &cookie), static_cast<const char *>(NULL));
+
 	free(out_string);
 	nvlist_destroy(nvl);
 }
@@ -687,17 +723,27 @@ ATF_TEST_CASE_BODY(cnvlist_take_nvlist)
 
 	nvlist_add_null(value, subkey);
 	ATF_REQUIRE_EQ(strcmp(subkey, nvlist_next(value, &type, &cookie)), 0);
-	check_element(value, type, NV_TYPE_NULL, subkey);
+	ATF_REQUIRE_EQ(nvlist_error(value), 0);
+	ATF_REQUIRE_EQ(type, NV_TYPE_NULL);
+	ATF_REQUIRE(!nvlist_empty(value));
+	ATF_REQUIRE(nvlist_exists(value, subkey));
 	ATF_REQUIRE(nvlist_exists_null(value, subkey));
+	ATF_REQUIRE_EQ(nvlist_next(value, &type, &cookie), static_cast<const char *>(NULL));
 
 	/* Add 'value' nvlist. */
 
 	cookie = NULL;
 	nvlist_move_nvlist(nvl, key, value);
 	ATF_REQUIRE_EQ(strcmp(key, nvlist_next(nvl, &type, &cookie)), 0);
-	check_element(nvl, type, NV_TYPE_NVLIST, key);
+	ATF_REQUIRE_EQ(nvlist_error(nvl), 0);
+	ATF_REQUIRE_EQ(type, NV_TYPE_NVLIST);
+	ATF_REQUIRE(!nvlist_empty(nvl));
+	ATF_REQUIRE(nvlist_exists(nvl, key));
 	ATF_REQUIRE(nvlist_exists_nvlist(nvl, key));
+	ATF_REQUIRE_EQ(nvlist_next(nvl, &type, &cookie), static_cast<const char *>(NULL));
 
+	cookie = NULL;
+	ATF_REQUIRE_EQ(strcmp(key, nvlist_next(nvl, &type, &cookie)), 0);
 	result = cnvlist_take_nvlist(nvl, cookie);
 	ATF_REQUIRE(!nvlist_exists_nvlist(nvl, key));
 	ATF_REQUIRE(result == value);
@@ -706,8 +752,15 @@ ATF_TEST_CASE_BODY(cnvlist_take_nvlist)
 
 	cookie = NULL;
 	ATF_REQUIRE_EQ(strcmp(subkey, nvlist_next(result, &type, &cookie)), 0);
-	check_element(result, type, NV_TYPE_NULL, subkey);
-	ATF_REQUIRE(nvlist_exists_null(result, subkey));
+	ATF_REQUIRE_EQ(nvlist_error(value), 0);
+	ATF_REQUIRE_EQ(type, NV_TYPE_NULL);
+	ATF_REQUIRE(!nvlist_empty(value));
+	ATF_REQUIRE(nvlist_exists(value, subkey));
+	ATF_REQUIRE(nvlist_exists_null(value, subkey));
+	ATF_REQUIRE_EQ(nvlist_next(value, &type, &cookie), static_cast<const char *>(NULL));
+
+	cookie = NULL;
+	ATF_REQUIRE_EQ(nvlist_next(nvl, &type, &cookie), static_cast<const char *>(NULL));
 
 	nvlist_destroy(nvl);
 	nvlist_destroy(value);
