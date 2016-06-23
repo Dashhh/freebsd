@@ -491,11 +491,11 @@ ATF_TEST_CASE_BODY(cnvlist_get_descriptor_array)
 {
 
 	nvlist_t *nvl;
-	int *in_array, type, i, count;
+	int *in_array, type;
 	const int *out_array;
 	void *cookie;
 	const char *key;
-	size_t nitems;
+	size_t nitems, count, i;
 
 	nvl = nvlist_create(0);
 	ATF_REQUIRE(nvl != NULL);
@@ -1098,7 +1098,6 @@ ATF_TEST_CASE_BODY(cnvlist_free_string)
 	nvlist_t *nvl;
 	const char *key;
 	const char *value;
-	char *out_string;
 	void *cookie;
 	int type;
 
@@ -1137,7 +1136,7 @@ ATF_TEST_CASE_BODY(cnvlist_free_string)
 ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_free_nvlist);
 ATF_TEST_CASE_BODY(cnvlist_free_nvlist)
 {
-	nvlist_t *nvl, *value, *result;
+	nvlist_t *nvl, *value;
 	const char *key, *subkey;
 	void *cookie;
 	int type;
@@ -1199,10 +1198,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_binary)
 	nvlist_t *nvl;
 	const char *key;
 	void *in_binary;
-	const void *out_binary;
 	void *cookie;
 	int type;
-	size_t in_size, out_size;
+	size_t in_size;
 
 	nvl = nvlist_create(0);
 	ATF_REQUIRE(nvl != NULL);
@@ -1246,11 +1244,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_bool_array)
 {
 	nvlist_t *nvl;
 	bool in_array[16];
-	const bool *out_array;
 	const char *key;
 	void *cookie;
 	int type, i;
-	size_t nitems;
 
 	for (i = 0; i < 16; i++)
 		in_array[i] = (i % 2 == 0);
@@ -1291,11 +1287,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_number_array)
 {
 	nvlist_t *nvl;
 	uint64_t in_array[16];
-	const uint64_t *out_array;
 	const char *key;
 	void *cookie;
 	int type, i;
-	size_t nitems;
 
 	for (i = 0; i < 16; i++)
 		in_array[i] = i;
@@ -1336,11 +1330,9 @@ ATF_TEST_CASE_BODY(cnvlist_free_string_array)
 {
 	nvlist_t *nvl;
 	const char *in_array[4] = {"inequality", "sucks", ".", ""};
-	char **out_array;
 	const char *key;
 	void *cookie;
-	int type, i;
-	size_t nitems;
+	int type;
 
 	nvl = nvlist_create(0);
 	ATF_REQUIRE(nvl != NULL);
@@ -1379,7 +1371,6 @@ ATF_TEST_CASE_BODY(cnvlist_free_nvlist_array)
 	nvlist_t *testnvl[8];
 	nvlist_t *nvl;
 	void *cookie;
-	size_t num_items;
 	unsigned int i;
 	int type;
 	const char *somestr[8] = { "a", "b", "c", "d", "e", "f", "g", "h" };
