@@ -68,6 +68,36 @@ __FBSDID("$FreeBSD$");
 #define QUOTE "\""
 #define COMMA ","
 
+static void
+insert_char(int fd, char c)
+{
+	switch(c) {
+	case '\"':
+		dprintf(fd, "\\\"");
+		break;
+	case '\\':
+		dprintf(fd, "\\\\");
+		break;
+	case '\b':
+		dprintf(fd, "\\b");
+		break;
+	case '\f':
+		dprintf(fd, "\\f");
+		break;
+	case '\n':
+		dprintf(fd, "\\n");
+		break;
+	case '\r':
+		dprintf(fd, "\\r");
+		break;
+	case '\t':
+		dprintf(fd, "\\t");
+		break;
+	default:
+		dprintf(fd, "%c", c);
+		break;
+	}
+}
 
 static void
 insert_text(int fd, const char *text)
@@ -80,7 +110,9 @@ static void
 insert_key(int fd, const char *key)
 {
 
+	insert_text(fd, QUOTE);
 	insert_text(fd, key);
+	insert_text(fd, QUOTE);
 	insert_text(fd, COLON);
 }
 
@@ -110,9 +142,11 @@ insert_number(int fd, uint64_t number)
 static void
 insert_string(int fd, const char *string)
 {
+	unsigned i;
 
 	insert_text(fd, QUOTE);
-	insert_text(fd, string);
+	for (i = 0; i < strlen(string); i++)
+		insert_char(fd, string[i]);
 	insert_text(fd, QUOTE);
 }
 
@@ -186,15 +220,15 @@ insert_nvlist(const nvlist_t *nvl, int fd)
 	nvpair_t *nvp, *tmpnvp;
 	void *cookie;
 
-	dprintf(fd, "{");
+	insert_text(fd, START_BRACE);
 	nvp = nvlist_first_nvpair(nvl);
 	if (nvp == NULL) {
-		dprintf(fd, "}");
+		insert_text(fd, END_BRACE);
 		return;
 	}
 	while (nvp != NULL) {
 		if (nvlist_first_nvpair(nvl) != nvp)
-			dprintf(fd, ",");
+			insert_text(fd, COMMA);
 		insert_key(fd, nvpair_name(nvp));
 		switch (nvpair_type(nvp)) {
 		case NV_TYPE_NULL:
@@ -210,7 +244,7 @@ insert_nvlist(const nvlist_t *nvl, int fd)
 			insert_string(fd, nvpair_get_string(nvp));
 			break;
 		case NV_TYPE_NVLIST:
-			dprintf(fd, "{");
+			insert_text(fd, START_BRACE);
 			tmpnvl = nvpair_get_nvlist(nvp);
 			tmpnvp = nvlist_first_nvpair(tmpnvl);
 			if (tmpnvp != NULL) {
@@ -245,7 +279,7 @@ insert_nvlist(const nvlist_t *nvl, int fd)
 			unsigned int ii;
 			size_t nitems;
 
-			dprintf(fd, "[");
+			insert_text(fd, START_BRACKET);
 			value = nvpair_get_nvlist_array(nvp, &nitems);
 			tmpnvl = NULL;
 			tmpnvp = NULL;
@@ -261,11 +295,11 @@ insert_nvlist(const nvlist_t *nvl, int fd)
 			if (tmpnvp != NULL) {
 				nvl = tmpnvl;
 				nvp = tmpnvp;
-				dprintf(fd, "{");
+				insert_text(fd, START_BRACE);
 				continue;
 			}
 			else
-				dprintf(fd, "]");
+				insert_text(fd, END_BRACE);
 			break;
 		    }
 		}
@@ -274,7 +308,7 @@ insert_nvlist(const nvlist_t *nvl, int fd)
 				cookie = NULL;
 				nvl = nvlist_get_pararr(nvl, &cookie);
 				if (nvl == NULL) {
-					dprintf(fd, "}");
+					insert_text(fd, END_BRACE);
 					return;
 				}
 				if (nvlist_in_array(nvl) && cookie == NULL) {
@@ -282,9 +316,9 @@ insert_nvlist(const nvlist_t *nvl, int fd)
 					dprintf(fd, "},{");
 				} else {
 					nvp = cookie;
-					dprintf(fd, "}");
+					insert_text(fd, END_BRACE);
 					if (nvpair_type(nvp) == NV_TYPE_NVLIST_ARRAY)
-						dprintf(fd, "]");
+						insert_text(fd, END_BRACKET);
 				}
 			} while (nvp == NULL);
 			if (nvlist_in_array(nvl) && cookie == NULL)
