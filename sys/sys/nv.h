@@ -242,6 +242,7 @@ void nvlist_free_descriptor_array(nvlist_t *nvl, const char *name);
 #endif
 
 void nvlist_to_json(const nvlist_t *nvl, int fd);
+nvlist_t *json_to_nvlist(int fd);
 
 __END_DECLS
 

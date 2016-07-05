@@ -12,6 +12,7 @@ SHLIB_MAJOR= 0
 CFLAGS+=-I${.CURDIR}/../../sys -I${.CURDIR}
 
 SRCS=	dnvlist.c
+SRCS+=	json_nvlist.c
 SRCS+=	msgio.c
 SRCS+=	nvlist.c
 SRCS+=	nvlist_json.c
