@@ -38,19 +38,26 @@
 #include "nvpair_impl.h"
 #include <sys/nv.h>
 
+
+struct stack
+{
+	char	**key;
+	unsigned *level;
+};
+
 struct machine
 {
-	int		  fd;			// provided file_descriptor
-	size_t		  position;		// letters read
+	int		 fd;			// provided file_descriptor
+	size_t		 position;		// letters read
 
-	char		  buffer;		// last letter read
-	char		 *key;			// key recognised by machine
-	int		  type;			// NV_TYPE
-	unsigned	  level;		// nest level
+	char		 buffer;		// last letter read
+	char		*key;			// key recognised by machine
+	int		 type;			// NV_TYPE
+	unsigned	 level;			// nest level
 
-	char		**stack;		// nvlist array name stack
-	size_t		  stack_size;		// stack max size
-	size_t		  stack_position;	// stack position
+	struct stack	 stack;			// nvlist array name stack
+	size_t		 stack_size;		// stack max size
+	size_t		 stack_position;	// stack position
 };
 
 static void
@@ -60,7 +67,7 @@ report_wrong(struct machine *machine, const char *str)
 	exit(-1);
 }
 
-static char 
+static char
 nextc(struct machine *machine)
 {
 	char c;
@@ -99,17 +106,60 @@ end(struct machine *machine)
 	return 10 == machine->buffer;
 }
 
+static void
+add_nvlist_array(struct machine *machine, nvlist_t **nvl)
+{
+	nvlist_t **child;
 
-//void add_to_array(struct machine *machine, nvlist_t *nvl)
-//{
-//	nvlist_t **nvlist_array;
-//	size_t nitems;
-//}
+	if (machine->stack_position == machine->stack_size) {
+		machine->stack_size *= 2;
+		machine->stack.level =
+			realloc(machine->stack.level, sizeof(machine->stack)*machine->stack_size);
+		machine->stack.key =
+			realloc(machine->stack.key, sizeof(machine->stack)*machine->stack_size);
+	}
+
+	machine->stack.key[machine->stack_position] = strdup(machine->key);
+	machine->stack.level[machine->stack_position] = machine->level;
+	machine->stack_position++;
+
+	child = malloc(sizeof(*child));
+	child[0] = nvlist_create(0);
+	nvlist_move_nvlist_array(*nvl, machine->key, child, 1);
+	*nvl = child[0];
+	machine->level++;
+}
+
+static void
+update_nvlist_array(struct machine *machine, nvlist_t **nvl)
+{
+	nvlist_t **children;
+	size_t nitems;
+	char *key;
+
+	printf("%zu %d %d\n", machine->stack_position, machine->stack.level[machine->stack_position-1],
+			     machine->level);
+
+	if (!machine->stack_position ||
+	    machine->level != machine->stack.level[machine->stack_position-1])
+	    return;
+
+	key = machine->stack.key[machine->stack_position-1];
+	children = nvlist_take_nvlist_array(*nvl, key, &nitems);
+	children = realloc(children, sizeof(*children)*(nitems+1));
+	children[nitems] = nvlist_create(0);
+	nvlist_move_nvlist_array(*nvl, key, children, nitems+1);
+	*nvl = children[nitems];
+	printf("%c\n", machine->buffer);
+
+	nextc(machine);
+	clear_white(machine);
+	machine->level++;
+}
 
 static void
 get_array(struct machine *machine, nvlist_t **nvl)
 {
-	nvlist_t **child;
 
 	switch(machine->buffer) {
 	case 'f':
@@ -122,14 +172,12 @@ get_array(struct machine *machine, nvlist_t **nvl)
 		machine->type = NV_TYPE_STRING_ARRAY;
 		break;
 	case '{':
+		if (machine->level == 0)
+			machine->level++;
 		nextc(machine);
 		clear_white(machine);
 		machine->type = NV_TYPE_NVLIST_ARRAY;
-
-		child = malloc(sizeof(*child));
-		child[0] = nvlist_create(0);
-		nvlist_move_nvlist_array(*nvl, machine->key, child, 1);
-		*nvl = child[0];
+		add_nvlist_array(machine, nvl);
 		break;
 	default:
 		if (isdigit(machine->buffer))
@@ -463,8 +511,7 @@ get_key(struct machine *machine)
 static void
 change_level(struct machine *machine, nvlist_t **nvl)
 {
-	static void
-*cookie;
+	void *cookie;
 
 	cookie = NULL;
 	machine->level--;
@@ -473,11 +520,23 @@ change_level(struct machine *machine, nvlist_t **nvl)
 		*nvl = nvpair_nvlist(nvlist_get_nvpair_parent(*nvl));
 		nextc(machine);
 		clear_white(machine);
-		if (machine->buffer != ',' && machine->buffer != '}')
+		if (machine->buffer == ']' && machine->stack_position) {
+			free(machine->stack.key[machine->stack_position-1]);
+			machine->stack_position--;
+			nextc(machine);
+			if (end(machine)) {
+				machine->level--;
+				return;
+			}
+			else
+				clear_white(machine);
+		}
+		if ( machine->buffer != ',' && machine->buffer != '}')
 			report_wrong(machine, "change level");
 		else if (machine->buffer == ',') {
 			nextc(machine);
 			clear_white(machine);
+			update_nvlist_array(machine, nvl);
 		}
 	}
 }
@@ -529,9 +588,10 @@ json_to_nvlist(int fd)
 	machine.position = 0;
 	machine.level = 0;
 	machine.key = strdup("");
-//	machine.stack = malloc(sizeof(*machine.stack)*20);
-//	machine.stack_position = 0;
-//	machine.stack_size = 20;
+	machine.stack.key = malloc(sizeof(*machine.stack.level)*20);
+	machine.stack.level = malloc(sizeof(*machine.stack.level)*20);
+	machine.stack_position = 0;
+	machine.stack_size = 20;
 
 	nextc(&machine);
 	clear_white(&machine);
@@ -548,7 +608,6 @@ json_to_nvlist(int fd)
 		parse_nvlist(&machine, &nvl);
 		break;
 	case NV_TYPE_NVLIST_ARRAY:
-		machine.level++;
 		parse_nvlist(&machine, &nvl);
 		break;
 	default:
