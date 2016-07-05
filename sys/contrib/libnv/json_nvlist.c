@@ -36,7 +36,6 @@
 #include "nv_impl.h"
 #include "nvlist_impl.h"
 #include "nvpair_impl.h"
-#include <sys/nv.h>
 
 
 struct stack
@@ -137,9 +136,6 @@ update_nvlist_array(struct machine *machine, nvlist_t **nvl)
 	size_t nitems;
 	char *key;
 
-	printf("%zu %d %d\n", machine->stack_position, machine->stack.level[machine->stack_position-1],
-			     machine->level);
-
 	if (!machine->stack_position ||
 	    machine->level != machine->stack.level[machine->stack_position-1])
 	    return;
@@ -150,7 +146,6 @@ update_nvlist_array(struct machine *machine, nvlist_t **nvl)
 	children[nitems] = nvlist_create(0);
 	nvlist_move_nvlist_array(*nvl, key, children, nitems+1);
 	*nvl = children[nitems];
-	printf("%c\n", machine->buffer);
 
 	nextc(machine);
 	clear_white(machine);
@@ -283,6 +278,7 @@ fetch_string(struct machine *machine)
 		nextc(machine);
 	}
 	value[i] = '\0';
+	value = realloc(value, sizeof(*value)*(strlen(value)+1));
 
 	if (machine->buffer == 10)
 		report_wrong(machine, "fetch string");
@@ -299,8 +295,7 @@ insert_string(struct machine *machine, nvlist_t *nvl)
 	char *value;
 
 	value = fetch_string(machine);
-	nvlist_add_string(nvl, machine->key, value);
-	free(value);
+	nvlist_move_string(nvl, machine->key, value);
 }
 
 static uint64_t
@@ -366,8 +361,8 @@ insert_bool_array(struct machine *machine, nvlist_t *nvl)
 	if (machine->buffer == 10)
 		report_wrong(machine, "bool array 3");
 
-	nvlist_add_bool_array(nvl, machine->key, value, i);
-	free(value);
+	value = realloc(value, sizeof(*value)*i);
+	nvlist_move_bool_array(nvl, machine->key, value, i);
 
 	machine->type = NV_TYPE_BOOL_ARRAY;
 	nextc(machine);
@@ -378,7 +373,7 @@ insert_string_array(struct machine *machine, nvlist_t *nvl)
 {
 	char **value;
 	size_t size;
-	unsigned i, j;
+	unsigned i;
 
 	i = 0;
 	size = 20;
@@ -408,11 +403,8 @@ insert_string_array(struct machine *machine, nvlist_t *nvl)
 	if (machine->buffer == 10)
 		report_wrong(machine, "string array 3");
 
-	nvlist_add_string_array(nvl, machine->key, (const char *const *)value, i);
-
-	for (j = 0; j < i; j++)
-		free(value[j]);
-	free(value);
+	value = realloc(value, sizeof(value)*i);
+	nvlist_move_string_array(nvl, machine->key, value, i);
 
 	nextc(machine);
 	machine->type = NV_TYPE_STRING_ARRAY;
@@ -453,8 +445,8 @@ insert_number_array(struct machine *machine, nvlist_t *nvl)
 	if (machine->buffer == 10)
 		report_wrong(machine, "number array 3");
 
-	nvlist_add_number_array(nvl, machine->key, value, i);
-	free(value);
+	value = realloc(value, sizeof(*value)*i);
+	nvlist_move_number_array(nvl, machine->key, value, i);
 
 	machine->type = NV_TYPE_NUMBER_ARRAY;
 	nextc(machine);
@@ -560,6 +552,7 @@ parse_nvlist(struct machine *machine, nvlist_t **nvl)
 			get_type(machine, nvl);
 			insert_type(machine, nvl);
 			clear_white(machine);
+			free(machine->key);
 
 			if (machine->type == NV_TYPE_NVLIST || machine->type == NV_TYPE_NVLIST_ARRAY)
 				continue;
@@ -571,7 +564,6 @@ parse_nvlist(struct machine *machine, nvlist_t **nvl)
 				clear_white(machine);
 			}
 
-			free(machine->key);
 		}
 		change_level(machine, nvl);
 	}
@@ -601,6 +593,8 @@ json_to_nvlist(int fd)
 	switch(machine.type) {
 	case NV_TYPE_NONE:
 		free(machine.key);
+		free(machine.stack.key);
+		free(machine.stack.level);
 		report_wrong(&machine, "to_nvlist typ non");
 		break;
 	case NV_TYPE_NVLIST:
@@ -608,6 +602,7 @@ json_to_nvlist(int fd)
 		parse_nvlist(&machine, &nvl);
 		break;
 	case NV_TYPE_NVLIST_ARRAY:
+		free(machine.key);
 		parse_nvlist(&machine, &nvl);
 		break;
 	default:
@@ -617,6 +612,10 @@ json_to_nvlist(int fd)
 		free(machine.key);
 		break;
 	}
+	free(machine.stack.key);
+	free(machine.stack.level);
+	if (!end(&machine))
+		report_wrong(&machine, "koniec");
 
 	return nvl;
 }
