@@ -98,13 +98,14 @@ verify_text(struct machine *machine, const char *text)
 static void
 clear_white(struct machine *machine)
 {
+
 	while(isspace(machine->buffer) && nextc(machine));
-		//nextc(machine);
 }
 
 static bool
 end(struct machine *machine)
 {
+
 	return !nextc(machine);
 }
 
@@ -291,7 +292,6 @@ fetch_string(struct machine *machine)
 	return (value);
 }
 
-// TODO: ADD czy MOVE?
 static void
 insert_string(struct machine *machine, nvlist_t *nvl)
 {
@@ -511,8 +511,6 @@ change_level(struct machine *machine, nvlist_t **nvl)
 {
 
 	machine->level--;
-	printf("a(%c)\n", machine->buffer);
-	printf("LEVEL: %d\n", machine->level);
 
 	if (machine->level > 0) {
 		*nvl = nvpair_nvlist(nvlist_get_nvpair_parent(*nvl));
@@ -557,7 +555,6 @@ parse_nvlist(struct machine *machine, nvlist_t **nvl)
 			get_type(machine, nvl);
 			insert_type(machine, nvl);
 			clear_white(machine);
-			printf("Dodalem %s\n", machine->key);
 			free(machine->key);
 
 			if (machine->type == NV_TYPE_NVLIST || machine->type == NV_TYPE_NVLIST_ARRAY)
@@ -602,6 +599,8 @@ json_to_nvlist(int fd)
 		free(machine.key);
 		free(machine.stack.key);
 		free(machine.stack.level);
+		if (end(&machine))
+			return nvl;
 		report_wrong(&machine, "to_nvlist typ non");
 		break;
 	case NV_TYPE_NVLIST:
@@ -620,6 +619,7 @@ json_to_nvlist(int fd)
 	}
 	free(machine.stack.key);
 	free(machine.stack.level);
+	clear_white(&machine);
 	if (!end(&machine))
 		report_wrong(&machine, "koniec");
 

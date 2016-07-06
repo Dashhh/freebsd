@@ -2,6 +2,7 @@
 
 ATF_TESTS_CXX=	\
 	dnv_tests \
+	json_tests \
 	nv_array_tests \
 	nv_tests \
 
