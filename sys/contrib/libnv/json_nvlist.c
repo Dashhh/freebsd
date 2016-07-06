@@ -53,6 +53,7 @@ struct machine
 	char		*key;			// key recognised by machine
 	int		 type;			// NV_TYPE
 	unsigned	 level;			// nest level
+	bool		 nv_array;		// true if json is an array of nvlists
 
 	struct stack	 stack;			// nvlist array name stack
 	size_t		 stack_size;		// stack max size
@@ -62,24 +63,26 @@ struct machine
 static void
 report_wrong(struct machine *machine, const char *str)
 {
-	fprintf(stderr, "Wrong char at %zu %s\n", machine->position, str);
+	fprintf(stderr, "Wrong char at %zu %c %s\n", machine->position, machine->buffer, str);
 	exit(-1);
 }
 
-static char
+static bool
 nextc(struct machine *machine)
 {
 	char c;
-	read(machine->fd, &c, 1);
+	bool byte;
+
+	byte = read(machine->fd, &c, 1);
 	machine->position++;
 	machine->buffer = c;
-	return c;
+	return byte;
 }
 
 static void
 verifyc(struct machine *machine, char expected)
 {
-	if (nextc(machine) != expected)
+	if (!nextc(machine) || machine->buffer != expected)
 		report_wrong(machine, "verifyc");
 }
 
@@ -95,14 +98,14 @@ verify_text(struct machine *machine, const char *text)
 static void
 clear_white(struct machine *machine)
 {
-	while(isspace(machine->buffer))
-		nextc(machine);
+	while(isspace(machine->buffer) && nextc(machine));
+		//nextc(machine);
 }
 
 static bool
 end(struct machine *machine)
 {
-	return 10 == machine->buffer;
+	return !nextc(machine);
 }
 
 static void
@@ -310,8 +313,11 @@ fetch_number(struct machine *machine)
 	}
 
 	value = machine->buffer - '0';
-	while (isdigit(nextc(machine)))
+	nextc(machine);
+	while (isdigit(machine->buffer)) {
 		value = value * 10 + machine->buffer - '0';
+		nextc(machine);
+	}
 
 	return (value);
 }
@@ -503,10 +509,10 @@ get_key(struct machine *machine)
 static void
 change_level(struct machine *machine, nvlist_t **nvl)
 {
-	void *cookie;
 
-	cookie = NULL;
 	machine->level--;
+	printf("a(%c)\n", machine->buffer);
+	printf("LEVEL: %d\n", machine->level);
 
 	if (machine->level > 0) {
 		*nvl = nvpair_nvlist(nvlist_get_nvpair_parent(*nvl));
@@ -515,13 +521,12 @@ change_level(struct machine *machine, nvlist_t **nvl)
 		if (machine->buffer == ']' && machine->stack_position) {
 			free(machine->stack.key[machine->stack_position-1]);
 			machine->stack_position--;
-			nextc(machine);
-			if (end(machine)) {
+			if (machine->nv_array && !machine->stack_position) {
 				machine->level--;
 				return;
 			}
-			else
-				clear_white(machine);
+			nextc(machine);
+			clear_white(machine);
 		}
 		if ( machine->buffer != ',' && machine->buffer != '}')
 			report_wrong(machine, "change level");
@@ -552,6 +557,7 @@ parse_nvlist(struct machine *machine, nvlist_t **nvl)
 			get_type(machine, nvl);
 			insert_type(machine, nvl);
 			clear_white(machine);
+			printf("Dodalem %s\n", machine->key);
 			free(machine->key);
 
 			if (machine->type == NV_TYPE_NVLIST || machine->type == NV_TYPE_NVLIST_ARRAY)
@@ -580,6 +586,7 @@ json_to_nvlist(int fd)
 	machine.position = 0;
 	machine.level = 0;
 	machine.key = strdup("");
+	machine.nv_array = false;
 	machine.stack.key = malloc(sizeof(*machine.stack.level)*20);
 	machine.stack.level = malloc(sizeof(*machine.stack.level)*20);
 	machine.stack_position = 0;
@@ -602,13 +609,12 @@ json_to_nvlist(int fd)
 		parse_nvlist(&machine, &nvl);
 		break;
 	case NV_TYPE_NVLIST_ARRAY:
+		machine.nv_array = true;
 		free(machine.key);
 		parse_nvlist(&machine, &nvl);
 		break;
 	default:
 		insert_type(&machine, &nvl);
-		if (!end(&machine))
-			report_wrong(&machine, "pojedynczy to_nvlist");
 		free(machine.key);
 		break;
 	}
