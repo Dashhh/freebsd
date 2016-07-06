@@ -27,6 +27,7 @@
 #include <sys/nv.h>
 
 #include <ctype.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -327,6 +328,13 @@ insert_string(struct machine *machine, nvlist_t *nvl)
 	nvlist_move_string(nvl, machine->key, value);
 }
 
+static bool
+overflow(uint64_t value, char digit)
+{
+	uint64_t max = ULLONG_MAX/10 - digit + '0';
+	return value <= max ? false : true;
+}
+
 static uint64_t
 fetch_number(struct machine *machine)
 {
@@ -341,6 +349,8 @@ fetch_number(struct machine *machine)
 	value = machine->buffer - '0';
 	nextc(machine);
 	while (isdigit(machine->buffer)) {
+		if (overflow(value, machine->buffer))
+			report_wrong(machine, "overflow");
 		value = value * 10 + machine->buffer - '0';
 		nextc(machine);
 	}
