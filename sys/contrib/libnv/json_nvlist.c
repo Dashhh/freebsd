@@ -259,7 +259,31 @@ insert_bool(struct machine *machine, nvlist_t *nvl)
 	nvlist_add_bool(nvl, machine->key, value);
 }
 
-//TODO: special chars
+static char
+insert_special(struct machine *machine)
+{
+	nextc(machine);
+	switch(machine->buffer) {
+	case '\"':
+		return ('\"');
+	case '\\':
+		return ('\\');
+	case 'b':
+		return ('\b');
+	case 'f':
+		return ('\f');
+	case 'n':
+		return ('\n');
+	case 'r':
+		return ('\r');
+	case 't':
+		return ('\t');
+	default:
+		report_wrong(machine, "insert_special_char");
+	}
+	return (0);
+}
+
 static char *
 fetch_string(struct machine *machine)
 {
@@ -274,6 +298,8 @@ fetch_string(struct machine *machine)
 	nextc(machine);
 	while (machine->buffer != 10 && machine->buffer != '\"') {
 		value[i] = machine->buffer;
+		if (value[i] == '\\')
+			value[i] = insert_special(machine);
 		i++;
 		if (i+1 == size) {
 			value = realloc(&value, sizeof(*value)*size*2);
