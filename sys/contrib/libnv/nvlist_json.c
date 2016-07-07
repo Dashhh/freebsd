@@ -109,9 +109,11 @@ insert_text(int fd, const char *text)
 static void
 insert_key(int fd, const char *key)
 {
+	size_t i;
 
 	insert_text(fd, QUOTE);
-	insert_text(fd, key);
+	for (i = 0; i < strlen(key); i++)
+		insert_char(fd, key[i]);	
 	insert_text(fd, QUOTE);
 	insert_text(fd, COLON);
 }
