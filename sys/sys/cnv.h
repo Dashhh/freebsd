@@ -31,6 +31,13 @@
 
 #include <sys/cdefs.h>
 
+#ifndef _KERNEL
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#endif
+
 #ifndef	_NVPAIR_T_DECLARED
 #define	_NVPAIR_T_DECLARED
 struct nvpair;
