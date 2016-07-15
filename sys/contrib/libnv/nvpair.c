@@ -90,6 +90,7 @@ struct nvpair {
 	size_t		 nvp_nitems;	/* Used only for array types. */
 	nvlist_t	*nvp_list;
 	TAILQ_ENTRY(nvpair) nvp_next;
+	struct nvl_node	*nvp_node;
 };
 
 #define	NVPAIR_ASSERT(nvp)	do {					\
@@ -221,6 +222,7 @@ nvpair_remove(struct nvl_head *head, nvpair_t *nvp, const nvlist_t *nvl)
 		nvpair_remove_nvlist_array(nvp);
 
 	TAILQ_REMOVE(head, nvp, nvp_next);
+	nvlist_remove_node(nvl, nvp->nvp_node);
 	nvp->nvp_list = NULL;
 }
 
@@ -1995,3 +1997,13 @@ nvpair_type_string(int type)
 	}
 }
 
+
+void
+nvpair_set_node(nvpair_t *nvp, struct nvl_node *node)
+{
+
+	NVPAIR_ASSERT(nvp);
+	PJDLOG_ASSERT(nvp->nvp_list != NULL);
+
+	nvp->nvp_node = node;
+}

@@ -34,13 +34,18 @@
 #define	_NVLIST_IMPL_H_
 
 #include <sys/nv.h>
+#include <sys/tree.h>
 
 #ifndef _KERNEL
 #include <stdint.h>
 #endif
 
+RB_HEAD(nvl_tree, nvl_node);
+
 nvpair_t *nvlist_get_nvpair_parent(const nvlist_t *nvl);
 const unsigned char *nvlist_unpack_header(nvlist_t *nvl,
     const unsigned char *ptr, size_t nfds, bool *isbep, size_t *leftp);
+
+void nvlist_remove_node(const nvlist_t *nvl, struct nvl_node *node);
 
 #endif	/* !_NVLIST_IMPL_H_ */
