@@ -141,7 +141,7 @@ CNVLIST_TAKE_ARRAY(bool *, bool_array, BOOL_ARRAY)
 CNVLIST_TAKE_ARRAY(uint64_t *, number_array, NUMBER_ARRAY)
 CNVLIST_TAKE_ARRAY(char **, string_array, STRING_ARRAY)
 CNVLIST_TAKE_ARRAY(nvlist_t **, nvlist_array, NVLIST_ARRAY)
-#ifndef _kernel
+#ifndef _KERNEL
 CNVLIST_TAKE_ARRAY(int *, descriptor_array, DESCRIPTOR_ARRAY);
 #endif
 
@@ -177,7 +177,7 @@ CNVLIST_FREE(bool_array, BOOL_ARRAY)
 CNVLIST_FREE(number_array, NUMBER_ARRAY)
 CNVLIST_FREE(string_array, STRING_ARRAY)
 CNVLIST_FREE(nvlist_array, NVLIST_ARRAY)
-#ifndef _kernel
+#ifndef _KERNEL
 CNVLIST_FREE(descriptor, DESCRIPTOR)
 CNVLIST_FREE(descriptor_array, DESCRIPTOR_ARRAY)
 #endif
