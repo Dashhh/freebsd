@@ -618,7 +618,7 @@ MLINKS+=byteorder.9 be16dec.9 \
 	byteorder.9 le64enc.9 \
 	byteorder.9 le64toh.9
 MLINKS+=cnv.9 cnvlist.9 \
-	cnv.9 cnvlist_free_binary.9
+	cnv.9 cnvlist_free_binary.9 \
 	cnv.9 cnvlist_free_bool.9 \
 	cnv.9 cnvlist_free_bool_array.9 \
 	cnv.9 cnvlist_free_descriptor.9 \
@@ -651,7 +651,7 @@ MLINKS+=cnv.9 cnvlist.9 \
 	cnv.9 cnvlist_take_nvlist.9 \
 	cnv.9 cnvlist_take_nvlist_array.9 \
 	cnv.9 cnvlist_take_string.9 \
-	cnv.9 cnvlist_take_string_array.9 \
+	cnv.9 cnvlist_take_string_array.9
 MLINKS+=condvar.9 cv_broadcast.9 \
 	condvar.9 cv_broadcastpri.9 \
 	condvar.9 cv_destroy.9 \
