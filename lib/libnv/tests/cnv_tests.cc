@@ -1189,7 +1189,7 @@ ATF_TEST_CASE_BODY(cnvlist_free_nvlist)
 	ATF_REQUIRE(!nvlist_exists_nvlist(nvl, key));
 	ATF_REQUIRE_EQ(nvlist_next(nvl, &type, &cookie), static_cast<const char *>(NULL));
 
-	nvlist_destroy(value);
+	nvlist_destroy(nvl);
 }
 
 ATF_TEST_CASE_WITHOUT_HEAD(cnvlist_free_binary);
