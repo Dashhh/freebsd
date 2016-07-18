@@ -1,3 +1,30 @@
+.\"
+.\" Copyright (c) 2016 Adam Starak <starak.adam@gmail.com>
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+.\" ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+.\" FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+.\" DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+.\" OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+.\" HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+.\" LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+.\" OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+.\" SUCH DAMAGE.
+.\"
+.\" $FreeBSD$
+.\"
 .Dd June 26, 2016
 .Dt CNV 9
 .Os
@@ -5,11 +32,11 @@
 .Nm cnvlist_get,
 .Nm cnvlist_take,
 .Nm cnvlist_free,
-.Nd "API for managing name/value pairs  by cookie "
+.Nd "API for managing name/value pairs by cookie "
 .Sh LIBRARY
 .Lb libnv
 .Sh SYNOPSIS
-.In cnv.h
+.In sys/cnv.h
 .Ft bool
 .Fn cnvlist_get_bool "void *cookiep"
 .Ft uint64_t
@@ -44,17 +71,17 @@
 .Ft "const void *"
 .Fn cnvlist_take_binary "void *cookiep" "size_t *sizep"
 .Ft "const bool *"
-.Fn cnvlist_take_bool_array "void *cookiep" "size_t *nitemsp";
+.Fn cnvlist_take_bool_array "void *cookiep" "size_t *nitemsp"
 .Ft "const uint64_t *"
-.Fn cnvlist_take_number_array "void *cookiep" "size_t *nitemsp";
+.Fn cnvlist_take_number_array "void *cookiep" "size_t *nitemsp"
 .Ft "const char * const *"
-.Fn cnvlist_take_string_array "void *cookiep" "size_t *nitemsp";
+.Fn cnvlist_take_string_array "void *cookiep" "size_t *nitemsp"
 .Ft "const nvlist_t * const *"
-.Fn cnvlist_take_nvlist_array "void *cookiep" "size_t *nitemsp";
+.Fn cnvlist_take_nvlist_array "void *cookiep" "size_t *nitemsp"
 .Ft int
 .Fn cnvlist_take_descriptor "void *cookiep"
 .Ft "const int *'
-.Fn cnvlist_take_descriptor_array "void *cookiep" "size_t *nitemsp";
+.Fn cnvlist_take_descriptor_array "void *cookiep" "size_t *nitemsp"
 .\"
 .Ft void
 .Fn cnvlist_free_null "nvlist_t *nvl" "void *cookiep"
