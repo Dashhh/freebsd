@@ -516,7 +516,7 @@ ATF_TEST_CASE_BODY(cnvlist_get_descriptor_array)
 	key = "name";
 	count = 50;
 
-	in_array = malloc(sizeof(*in_array)*count);
+	in_array = static_cast<int *>(malloc(sizeof(*in_array)*count));
 	ATF_REQUIRE(in_array != NULL);
 	for (i = 0; i < count; i++) {
 		in_array[i] = dup(STDERR_FILENO);
