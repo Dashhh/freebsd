@@ -31,7 +31,8 @@
 .Sh NAME
 .Nm dnvlist_get,
 .Nm dnvlist_take,
-.Nd "API for getting name/value pairs, which doesn't raise an error if pair doesn't exists"
+.Nd "API for getting name/value pairs, which doesn't raise an error if pair
+doesn't exist".
 .Sh LIBRARY
 .Lb libnv
 .Sh SYNOPSIS
@@ -63,31 +64,29 @@
 .Sh DESCRIPTION
 The
 .Nm libnv
-librcary allows to easily manage name value pairs as well as send and receive
-them over sockets. For detailed information check
+library allows to easily manage name value pairs as well as send and receive
+them over sockets. For more information see also
 .Xr nv 9 .
 .Pp
 The
 .Nm dnvlist_get
-family functions allow to obtain value of the given name. What differ them from
-nvlist_get functions is the fact, that the program won't be aborted if the element
-of given name doesn't exist. The function will return value provided in defval.
-In case of string, nvlist, descriptor, binary or any array, returned resource should
-not be modified - it still belongs to the nvlist.
-The nvlist must not be in error state.
+family functions returns value associated with the given name. If the element
+of given name doesn't exist, the function will return value provided in defval.
+In case of string, nvlist, descriptor, binary or any array, returned resource
+should not be modified - it still belongs to the nvlist. The nvlist must not be
+in error state.
 .Pp
 The
 .Nm dnvlist_take
-family functions return value associated with the given name and remove the element
-from the nvlist. If the element of given name doesn't exist, the function will
-return default value and leave untouched.
-In case of string, binary or any array values, the caller is responsible for freeing
-returned memory using the
-.Xr free 3
+family functions returns value associated with the given name and remove the
+element from the nvlist. If the element of given name doesn't exist, the value
+provided in defval. In case of string, binary or any array values, the caller is
+responsible for freeing returned memory using the
+.Fn free 3
 function.
 In case of nvlist, the caller is responsible for destroying returned nvlist
 using the
-.Fn cnvlist_destroy
+.Fn nvlist_destroy
 function.
 In case of descriptor, the caller is responsible for closing returned descriptor
 using the
