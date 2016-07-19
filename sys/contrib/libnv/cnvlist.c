@@ -53,13 +53,14 @@ __FBSDID("$FreeBSD$");
 #include "nvlist_impl.h"
 #include "nvpair_impl.h"
 
-#define CNVLIST_GET(ftype, type, nvtype)					\
-ftype										\
-cnvlist_get_##type(void *cookiep)						\
-{										\
-										\
-        if (nvpair_type(cookiep) != NV_TYPE_##nvtype)				\
-		nvlist_report_missing(NV_TYPE_##nvtype,	nvpair_name(cookiep));	\
+#define CNVLIST_GET(ftype, type, nvtype)				\
+ftype									\
+cnvlist_get_##type(void *cookiep)					\
+{									\
+									\
+        if (nvpair_type(cookiep) != NV_TYPE_##nvtype)			\
+		nvlist_report_missing(NV_TYPE_##nvtype,			\
+		    nvpair_name(cookiep));				\
         return (nvpair_get_##type(cookiep));				\
 }
 
@@ -73,14 +74,15 @@ CNVLIST_GET(int, descriptor, DESCRIPTOR)
 
 #undef CNVLIST_GET
 
-#define CNVLIST_GET_ARRAY(ftype, type, nvtype)					\
-ftype										\
-cnvlist_get_##type(void *cookiep, size_t *nitemsp)				\
-{										\
-										\
-        if (nvpair_type(cookiep) != NV_TYPE_##nvtype)				\
-		nvlist_report_missing(NV_TYPE_##nvtype,	nvpair_name(cookiep));	\
-        return (nvpair_get_##type(cookiep, nitemsp));				\
+#define CNVLIST_GET_ARRAY(ftype, type, nvtype)				\
+ftype									\
+cnvlist_get_##type(void *cookiep, size_t *nitemsp)			\
+{									\
+									\
+        if (nvpair_type(cookiep) != NV_TYPE_##nvtype)			\
+		nvlist_report_missing(NV_TYPE_##nvtype,			\
+		    nvpair_name(cookiep));				\
+        return (nvpair_get_##type(cookiep, nitemsp));			\
 }
 
 CNVLIST_GET_ARRAY(const bool *, bool_array, BOOL_ARRAY)
@@ -102,18 +104,19 @@ cnvlist_get_binary(void *cookiep, size_t *sizep)
         return (nvpair_get_binary(cookiep, sizep));
 }
 
-#define CNVLIST_TAKE(ftype, type, nvtype)					\
-ftype										\
-cnvlist_take_##type(nvlist_t *nvl, void *cookiep)				\
-{										\
-	ftype value;								\
-										\
-        if (nvpair_type(cookiep) != NV_TYPE_##nvtype)				\
-		nvlist_report_missing(NV_TYPE_##nvtype,	nvpair_name(cookiep));	\
-	value = (ftype)(intptr_t)nvpair_get_##type(cookiep);			\
-	nvlist_remove_nvpair(nvl, cookiep);					\
-	nvpair_free_structure(cookiep);						\
-	return (value);								\
+#define CNVLIST_TAKE(ftype, type, nvtype)				\
+ftype									\
+cnvlist_take_##type(nvlist_t *nvl, void *cookiep)			\
+{									\
+	ftype value;							\
+									\
+        if (nvpair_type(cookiep) != NV_TYPE_##nvtype)			\
+		nvlist_report_missing(NV_TYPE_##nvtype,			\
+		    nvpair_name(cookiep));				\
+	value = (ftype)(intptr_t)nvpair_get_##type(cookiep);		\
+	nvlist_remove_nvpair(nvl, cookiep);				\
+	nvpair_free_structure(cookiep);					\
+	return (value);							\
 }
 
 CNVLIST_TAKE(bool, bool, BOOL)
@@ -126,18 +129,19 @@ CNVLIST_TAKE(int, descriptor, DESCRIPTOR)
 
 #undef CNVLIST_TAKE
 
-#define CNVLIST_TAKE_ARRAY(ftype, type, nvtype)					\
-ftype										\
-cnvlist_take_##type(nvlist_t *nvl, void *cookiep, size_t *nitemsp)		\
-{										\
-	ftype value;								\
-										\
-        if (nvpair_type(cookiep) != NV_TYPE_##nvtype)				\
-		nvlist_report_missing(NV_TYPE_##nvtype,	nvpair_name(cookiep));	\
-	value = (ftype)(intptr_t)nvpair_get_##type(cookiep, nitemsp);		\
-	nvlist_remove_nvpair(nvl, cookiep);					\
-	nvpair_free_structure(cookiep);						\
-	return (value);								\
+#define CNVLIST_TAKE_ARRAY(ftype, type, nvtype)				\
+ftype									\
+cnvlist_take_##type(nvlist_t *nvl, void *cookiep, size_t *nitemsp)	\
+{									\
+	ftype value;							\
+									\
+        if (nvpair_type(cookiep) != NV_TYPE_##nvtype)			\
+		nvlist_report_missing(NV_TYPE_##nvtype,			\
+		    nvpair_name(cookiep));				\
+	value = (ftype)(intptr_t)nvpair_get_##type(cookiep, nitemsp);	\
+	nvlist_remove_nvpair(nvl, cookiep);				\
+	nvpair_free_structure(cookiep);					\
+	return (value);							\
 }
 
 CNVLIST_TAKE_ARRAY(bool *, bool_array, BOOL_ARRAY)
@@ -148,7 +152,7 @@ CNVLIST_TAKE_ARRAY(nvlist_t **, nvlist_array, NVLIST_ARRAY)
 CNVLIST_TAKE_ARRAY(int *, descriptor_array, DESCRIPTOR_ARRAY);
 #endif
 
-#undef  cnvlist_get_array
+#undef  CNVLIST_TAKE_ARRAY
 
 void *
 cnvlist_take_binary(nvlist_t *nvl, void *cookiep, size_t *sizep)
@@ -164,12 +168,12 @@ cnvlist_take_binary(nvlist_t *nvl, void *cookiep, size_t *sizep)
 }
 
 
-#define CNVLIST_FREE(type, nvtype)			\
-void							\
-cnvlist_free_##type(nvlist_t *nvl, void *cookiep)	\
-{							\
-							\
-	nvlist_free_nvpair(nvl, cookiep);		\
+#define CNVLIST_FREE(type, nvtype)					\
+void									\
+cnvlist_free_##type(nvlist_t *nvl, void *cookiep)			\
+{									\
+									\
+	nvlist_free_nvpair(nvl, cookiep);				\
 }
 
 CNVLIST_FREE(bool, BOOL)
