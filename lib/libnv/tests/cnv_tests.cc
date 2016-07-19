@@ -501,12 +501,11 @@ ATF_TEST_CASE_BODY(cnvlist_get_descriptor_array)
 {
 
 	nvlist_t *nvl;
-	int *in_array, type;
-	const int *out_array;
-	void *cookie;
-	const char *key;
-// TODO ?
 	size_t count, i, nitems;
+	const int *out_array;
+	int *in_array, type;
+	const char *key;
+	void *cookie;
 
 	nvl = nvlist_create(0);
 	ATF_REQUIRE(nvl != NULL);
