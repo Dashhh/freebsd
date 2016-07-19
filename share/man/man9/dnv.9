@@ -84,8 +84,8 @@ the element from the nvlist.
 If an element of the supplied name does not exist, the value provided in
 .Nm defval
 is returned.
-The caller is responsible for freeing returned memory with specific functions
-listed below:
+When the value is a string, binary, or array value, the caller is
+responsible for freeing returned memory with
 .Fn free 3
 function.
 When the value is an nvlist, the caller is responsible for destroying the
