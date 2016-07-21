@@ -38,6 +38,7 @@ __FBSDID("$FreeBSD$");
 
 #ifdef _KERNEL
 
+#include <sys/ctype.h>
 #include <sys/errno.h>
 #include <sys/kernel.h>
 #include <sys/lock.h>
@@ -367,7 +368,7 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 	    (type >= NV_TYPE_FIRST && type <= NV_TYPE_LAST));
 
 	node = NULL;
-	find.key = strdup(name);
+	find.key = nv_strdup(name);
 	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
 		for (i = 0 ; i < strlen(find.key); i++)
 			find.key[i] = tolower(find.key[i]);
@@ -382,7 +383,7 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 	for (;;node = RB_NEXT(nvl_tree, tree, node)) {
 		if (strcmp(node->key, find.key) == 0) {
 			if (nvpair_type(node->nvp) == type) {
-				free(find.key);
+				nv_free(find.key);
 				return (node->nvp);
 			}
 			tmp = RB_NEXT(nvl_tree, tree, node);
@@ -396,7 +397,7 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 
 
 fail:
-	free(find.key);
+	nv_free(find.key);
 	ERRNO_SET(ENOENT);
 	return (NULL);
 }
@@ -1659,8 +1660,8 @@ nvlist_insert_node(nvlist_t *nvl, nvpair_t *nvp)
 	struct nvl_node *node;
 	size_t i;
 
-	node = malloc(sizeof(*node));
-	node->key = strdup(nvpair_name(nvp));
+	node = nv_malloc(sizeof(*node));
+	node->key = nv_strdup(nvpair_name(nvp));
 	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0) {
 		for (i = 0; i < strlen(node->key); i++)
 			node->key[i] = tolower(node->key[i]);
@@ -2045,8 +2046,8 @@ nvlist_remove_node(const nvlist_t *nvl, struct nvl_node *node)
 	tree = __DECONST(struct nvl_tree *, &nvl->nvl_tree);
 
 	RB_REMOVE(nvl_tree, tree, node);
-	free(node->key);
-	free(node);
+	nv_free(node->key);
+	nv_free(node);
 }
 
 void
