@@ -403,12 +403,14 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 		tmp = RB_NEXT(nvl_tree, tree, node);
 		for (;tmp != NULL && tmp != node &&
 		    strcmp(tmp->key, find.key) == 0 &&
-		    tmp->type < type;) {
+		    tmp->type <= type;) {
+			if (tmp->type == type) {
+				res = tmp;
+				break;
+			}
 			node = tmp;
 			tmp = RB_NEXT(nvl_tree, tree, node);
 		}
-		if (tmp->type == type)
-			res = tmp;
 	}
 
 	if (res == NULL)
