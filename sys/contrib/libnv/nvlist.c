@@ -100,6 +100,7 @@ struct nvl_node {
 	RB_ENTRY(nvl_node) nvln_entry;
 	nvpair_t *nvp;
 	char *key;
+	int type;
 };
 
 #define	NVLIST_MAGIC	0x6e766c	/* "nvl" */
@@ -147,7 +148,10 @@ nvlist_insert_cmp(struct nvl_node *a, struct nvl_node *b)
 	int res;
 
 	res = strcmp(a->key, b->key);
-	return res == 0 ? 1 : res;
+
+	if (res == 0)
+		return a->type >= b->type ? 1 : -1;
+	return res;
 }
 
 RB_GENERATE_FIND(nvl_tree, nvl_node, nvln_entry, nvlist_find_cmp, static)
@@ -156,6 +160,7 @@ RB_GENERATE_INSERT(nvl_tree, nvl_node, nvln_entry, nvlist_insert_cmp, static)
 RB_GENERATE_REMOVE_COLOR(nvl_tree, nvl_node, nvln_entry, static)
 RB_GENERATE_REMOVE(nvl_tree, nvl_node, nvln_entry, static)
 RB_GENERATE_NEXT(nvl_tree, nvl_node, nvln_entry, static)
+RB_GENERATE_PREV(nvl_tree, nvl_node, nvln_entry, static)
 
 nvlist_t *
 nvlist_create(int flags)
@@ -359,7 +364,7 @@ static nvpair_t *
 nvlist_find(const nvlist_t *nvl, int type, const char *name)
 {
 	struct nvl_tree *tree;
-	struct nvl_node find, *node, *tmp;
+	struct nvl_node find, *node, *tmp, *res;
 	size_t i;
 
 	NVLIST_ASSERT(nvl);
@@ -368,6 +373,7 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 	    (type >= NV_TYPE_FIRST && type <= NV_TYPE_LAST));
 
 	node = NULL;
+	res = NULL;
 	find.key = nv_strdup(name);
 	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
 		for (i = 0 ; i < strlen(find.key); i++)
@@ -378,23 +384,38 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 	if (node == NULL)
 		goto fail;
 	else if (type == NV_TYPE_NONE)
-		return (node->nvp);
+		return node->nvp;
 
-	for (;;node = RB_NEXT(nvl_tree, tree, node)) {
-		if (strcmp(node->key, find.key) == 0) {
-			if (nvpair_type(node->nvp) == type) {
-				nv_free(find.key);
-				return (node->nvp);
-			}
-			tmp = RB_NEXT(nvl_tree, tree, node);
-			if (node == tmp || tmp == NULL)
-				goto fail;
-		}
-		else {
-			goto fail;
+	if (node->type >= type) {
+		if (node->type == type)
+			res = node;
+		tmp = RB_PREV(nvl_tree, tree, node);
+		for (;tmp != NULL && tmp != node &&
+		    strcmp(tmp->key, find.key) == 0 &&
+		    tmp->type >= type;) {
+			if (tmp->type == type)
+				res = tmp;
+			node = tmp;
+			tmp = RB_PREV(nvl_tree, tree, node);
 		}
 	}
+	else {
+		tmp = RB_NEXT(nvl_tree, tree, node);
+		for (;tmp != NULL && tmp != node &&
+		    strcmp(tmp->key, find.key) == 0 &&
+		    tmp->type < type;) {
+			node = tmp;
+			tmp = RB_NEXT(nvl_tree, tree, node);
+		}
+		if (tmp->type == type)
+			res = tmp;
+	}
 
+	if (res == NULL)
+		goto fail;
+
+	nv_free(find.key);
+	return (res->nvp);
 
 fail:
 	nv_free(find.key);
@@ -1667,6 +1688,7 @@ nvlist_insert_node(nvlist_t *nvl, nvpair_t *nvp)
 			node->key[i] = tolower(node->key[i]);
 	}
 	node->nvp = nvp;
+	node->type = nvpair_type(nvp);
 	RB_INSERT(nvl_tree, &nvl->nvl_tree, node);
 
 	nvpair_set_node(nvp, node);
