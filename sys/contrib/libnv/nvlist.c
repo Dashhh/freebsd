@@ -404,10 +404,12 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 
 	if (node == NULL)
 		goto fail;
+	nv_free(find.nvln_key);
 	return node->nvln_nvp;
 
 fail:
-	nv_free(find.nvln_key);
+	if (find.nvln_key != NULL)
+		nv_free(find.nvln_key);
 	ERRNO_SET(ENOENT);
 	return (NULL);
 }
