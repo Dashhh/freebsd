@@ -97,10 +97,12 @@ __FBSDID("$FreeBSD$");
 #define	NV_FLAG_ALL_MASK	(NV_FLAG_PRIVATE_MASK | NV_FLAG_PUBLIC_MASK)
 
 struct nvl_node {
-	RB_ENTRY(nvl_node) nvln_entry;
-	nvpair_t *nvp;
-	char *key;
-	int type;
+	RB_ENTRY(nvl_node)	 nvln_entry;    /* RB_TREE interface */
+	nvpair_t		*nvln_nvp;      /* Pointer to pair. */
+
+	/* Dumped pair's name. If flag NV_NO_UNIQUE set, name is lowercased. */
+	char			*nvln_key;
+	int			 nvln_type;     /* Type of pair. */
 };
 
 #define	NVLIST_MAGIC	0x6e766c	/* "nvl" */
@@ -139,7 +141,7 @@ static int
 nvlist_find_cmp(struct nvl_node *a, struct nvl_node *b)
 {
 
-	return strcmp(a->key, b->key);
+	return strcmp(a->nvln_key, b->nvln_key);
 }
 
 static int
@@ -147,10 +149,10 @@ nvlist_insert_cmp(struct nvl_node *a, struct nvl_node *b)
 {
 	int res;
 
-	res = strcmp(a->key, b->key);
+	res = strcmp(a->nvln_key, b->nvln_key);
 
 	if (res == 0)
-		return a->type >= b->type ? 1 : -1;
+		return a->nvln_type >= b->nvln_type ? 1 : -1;
 	return res;
 }
 
@@ -374,26 +376,26 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 
 	node = NULL;
 	res = NULL;
-	find.key = nv_strdup(name);
+	find.nvln_key = nv_strdup(name);
 	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
-		for (i = 0 ; i < strlen(find.key); i++)
-			find.key[i] = tolower(find.key[i]);
+		for (i = 0 ; i < strlen(find.nvln_key); i++)
+			find.nvln_key[i] = tolower(find.nvln_key[i]);
 	tree = __DECONST(struct nvl_tree *, &nvl->nvl_tree);
 	node = RB_FIND(nvl_tree, tree, &find);
 
 	if (node == NULL)
 		goto fail;
 	else if (type == NV_TYPE_NONE)
-		return node->nvp;
+		return node->nvln_nvp;
 
-	if (node->type >= type) {
-		if (node->type == type)
+	if (node->nvln_type >= type) {
+		if (node->nvln_type == type)
 			res = node;
 		tmp = RB_PREV(nvl_tree, tree, node);
 		for (;tmp != NULL && tmp != node &&
-		    strcmp(tmp->key, find.key) == 0 &&
-		    tmp->type >= type;) {
-			if (tmp->type == type)
+		    strcmp(tmp->nvln_key, find.nvln_key) == 0 &&
+		    tmp->nvln_type >= type;) {
+			if (tmp->nvln_type == type)
 				res = tmp;
 			node = tmp;
 			tmp = RB_PREV(nvl_tree, tree, node);
@@ -402,9 +404,9 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 	else {
 		tmp = RB_NEXT(nvl_tree, tree, node);
 		for (;tmp != NULL && tmp != node &&
-		    strcmp(tmp->key, find.key) == 0 &&
-		    tmp->type <= type;) {
-			if (tmp->type == type) {
+		    strcmp(tmp->nvln_key, find.nvln_key) == 0 &&
+		    tmp->nvln_type <= type;) {
+			if (tmp->nvln_type == type) {
 				res = tmp;
 				break;
 			}
@@ -416,11 +418,11 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 	if (res == NULL)
 		goto fail;
 
-	nv_free(find.key);
-	return (res->nvp);
+	nv_free(find.nvln_key);
+	return (res->nvln_nvp);
 
 fail:
-	nv_free(find.key);
+	nv_free(find.nvln_key);
 	ERRNO_SET(ENOENT);
 	return (NULL);
 }
@@ -1683,17 +1685,34 @@ nvlist_insert_node(nvlist_t *nvl, nvpair_t *nvp)
 	struct nvl_node *node;
 	size_t i;
 
+	PJDLOG_ASSERT((nvlist_flags(nvl) & NV_FLAG_NO_UNIQUE) != 0 ||
+	    !nvlist_exists(nvl, nvpair_name(nvp)));
+
 	node = nv_malloc(sizeof(*node));
-	node->key = nv_strdup(nvpair_name(nvp));
-	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0) {
-		for (i = 0; i < strlen(node->key); i++)
-			node->key[i] = tolower(node->key[i]);
-	}
-	node->nvp = nvp;
-	node->type = nvpair_type(nvp);
-	RB_INSERT(nvl_tree, &nvl->nvl_tree, node);
+	if (node == NULL)
+		goto fail;
+	node->nvln_key = nv_strdup(nvpair_name(nvp));
+	if (node->nvln_key == NULL)
+		goto fail;
+
+	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
+		for (i = 0; i < strlen(node->nvln_key); i++)
+			node->nvln_key[i] = tolower(node->nvln_key[i]);
+	node->nvln_nvp = nvp;
+	node->nvln_type = nvpair_type(nvp);
+	if (RB_INSERT(nvl_tree, &nvl->nvl_tree, node) != NULL)
+		goto fail;
 
 	nvpair_set_node(nvp, node);
+	return;
+
+fail:
+	if (node != NULL) {
+		if (node->nvln_key != NULL)
+			nv_free(node->nvln_key);
+		nv_free(node);
+	}
+	nvpair_free(nvp);
 }
 
 bool
@@ -1717,8 +1736,14 @@ nvlist_move_nvpair(nvlist_t *nvl, nvpair_t *nvp)
 		}
 	}
 
-	nvpair_insert(&nvl->nvl_head, nvp, nvl);
 	nvlist_insert_node(nvl, nvp);
+	if (nvp == NULL) {
+		nvl->nvl_error = ERRNO_OR_DEFAULT(ENOMEM);
+		ERRNO_SET(nvl->nvl_error);
+		return false;
+	}
+	nvpair_insert(&nvl->nvl_head, nvp, nvl);
+
 	return (true);
 }
 
@@ -2070,7 +2095,7 @@ nvlist_remove_node(const nvlist_t *nvl, struct nvl_node *node)
 	tree = __DECONST(struct nvl_tree *, &nvl->nvl_tree);
 
 	RB_REMOVE(nvl_tree, tree, node);
-	nv_free(node->key);
+	nv_free(node->nvln_key);
 	nv_free(node);
 }
 
