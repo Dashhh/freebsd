@@ -137,11 +137,30 @@ struct nvlist_header {
 	uint64_t	nvlh_size;
 } __packed;
 
+RB_GENERATE_PREV(nvl_tree, nvl_node, nvln_entry, static)
+
 static int
 nvlist_find_cmp(struct nvl_node *a, struct nvl_node *b)
 {
+	int res;
+	struct nvl_node *tmp;
 
-	return strcmp(a->nvln_key, b->nvln_key);
+	res = strcmp(a->nvln_key, b->nvln_key);
+	if (res == 0) {
+		if (a->nvln_type == NV_TYPE_NONE)
+			return 0;
+		if (a->nvln_type > b->nvln_type)
+			return 1;
+		if (a->nvln_type < b->nvln_type)
+			return -1;
+		tmp = RB_PREV(nvl_tree, tree, b);
+		if (tmp != NULL && tmp != b && tmp->nvln_type == a->nvln_type &&
+		    strcmp(tmp->nvln_key, a->nvln_key) == 0)
+			return -1;
+		else
+			return 0;
+	}
+	return res;
 }
 
 static int
@@ -161,8 +180,6 @@ RB_GENERATE_INSERT_COLOR(nvl_tree, nvl_node, nvln_entry, static)
 RB_GENERATE_INSERT(nvl_tree, nvl_node, nvln_entry, nvlist_insert_cmp, static)
 RB_GENERATE_REMOVE_COLOR(nvl_tree, nvl_node, nvln_entry, static)
 RB_GENERATE_REMOVE(nvl_tree, nvl_node, nvln_entry, static)
-RB_GENERATE_NEXT(nvl_tree, nvl_node, nvln_entry, static)
-RB_GENERATE_PREV(nvl_tree, nvl_node, nvln_entry, static)
 
 nvlist_t *
 nvlist_create(int flags)
@@ -366,7 +383,7 @@ static nvpair_t *
 nvlist_find(const nvlist_t *nvl, int type, const char *name)
 {
 	struct nvl_tree *tree;
-	struct nvl_node find, *node, *tmp, *res;
+	struct nvl_node find, *node;
 	size_t i;
 
 	NVLIST_ASSERT(nvl);
@@ -375,8 +392,10 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 	    (type >= NV_TYPE_FIRST && type <= NV_TYPE_LAST));
 
 	node = NULL;
-	res = NULL;
 	find.nvln_key = nv_strdup(name);
+	if (find.nvln_key == NULL)
+		goto fail;
+	find.nvln_type = type;
 	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
 		for (i = 0 ; i < strlen(find.nvln_key); i++)
 			find.nvln_key[i] = tolower(find.nvln_key[i]);
@@ -385,41 +404,7 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 
 	if (node == NULL)
 		goto fail;
-	else if (type == NV_TYPE_NONE)
-		return node->nvln_nvp;
-
-	if (node->nvln_type >= type) {
-		if (node->nvln_type == type)
-			res = node;
-		tmp = RB_PREV(nvl_tree, tree, node);
-		for (;tmp != NULL && tmp != node &&
-		    strcmp(tmp->nvln_key, find.nvln_key) == 0 &&
-		    tmp->nvln_type >= type;) {
-			if (tmp->nvln_type == type)
-				res = tmp;
-			node = tmp;
-			tmp = RB_PREV(nvl_tree, tree, node);
-		}
-	}
-	else {
-		tmp = RB_NEXT(nvl_tree, tree, node);
-		for (;tmp != NULL && tmp != node &&
-		    strcmp(tmp->nvln_key, find.nvln_key) == 0 &&
-		    tmp->nvln_type <= type;) {
-			if (tmp->nvln_type == type) {
-				res = tmp;
-				break;
-			}
-			node = tmp;
-			tmp = RB_NEXT(nvl_tree, tree, node);
-		}
-	}
-
-	if (res == NULL)
-		goto fail;
-
-	nv_free(find.nvln_key);
-	return (res->nvln_nvp);
+	return node->nvln_nvp;
 
 fail:
 	nv_free(find.nvln_key);
@@ -498,9 +483,6 @@ nvlist_dump_error_check(const nvlist_t *nvl, int fd, int level)
 	return (false);
 }
 
-/*
- * Dump content of nvlist.
- */
 void
 nvlist_dump(const nvlist_t *nvl, int fd)
 {
