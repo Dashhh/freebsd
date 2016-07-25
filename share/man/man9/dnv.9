@@ -76,7 +76,8 @@ value provided in defval.
 Returned strings, nvlists, descriptors, binaries or arrays must not be modified
 by the user.
 They still belong to the nvlist.
-The nvlist must not be in error state.
+If the nvlist is in an error state, attempts to use any of these functions will
+cause the program to abort.
 .Pp
 The
 .Nm dnvlist_take
