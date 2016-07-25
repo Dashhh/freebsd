@@ -115,16 +115,16 @@ them over sockets.
 For more information, also see
 .Xr nv 9 .
 .Pp
-In order to understand the idea of cookie, please read
+The concept of cookies is explained in
 .Fn nvlist_next ,
 .Fn nvlist_get_parent ,
 .Fn nvlist_get_pararr
 from
-.Xr nv 9
+.Xr nv 9 .
 .Pp
 The
 .Nm cnvlist_get
-family of functions allows to obtain the value of the supplied cookie.
+family of functions obtains the value of the supplied cookie.
 In case of string, nvlist, descriptor, binary or any array, returned resource
 should not be modified - it still belongs to the nvlist.
 The nvlist must not be in error state.
@@ -160,5 +160,5 @@ will be aborted.
 .An -nosplit
 The
 .Nm cnv
-API was created during Google Summer Of Code 2016 by
+API was created during the Google Summer Of Code 2016 by
 .An Adam Starak Aq starak.adam@gmail.com
