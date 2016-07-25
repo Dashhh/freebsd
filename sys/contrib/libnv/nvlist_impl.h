@@ -34,13 +34,28 @@
 #define	_NVLIST_IMPL_H_
 
 #include <sys/nv.h>
+#include <sys/tree.h>
 
 #ifndef _KERNEL
 #include <stdint.h>
 #endif
 
+RB_HEAD(nvl_tree, nvl_node);
+TAILQ_HEAD(nvln_head, nvpair);
+
+struct nvl_node {
+	RB_ENTRY(nvl_node)	 nvln_entry;    /* RB_TREE interface */
+	struct nvln_head	 nvln_head;	/* Nvpair elements list */
+
+	/* Dumped pair's name. If flag NV_NO_UNIQUE set, name is lowercased. */
+	char			*nvln_key;
+	int			 nvln_type;     /* Type of pair. */
+};
+
 nvpair_t *nvlist_get_nvpair_parent(const nvlist_t *nvl);
 const unsigned char *nvlist_unpack_header(nvlist_t *nvl,
     const unsigned char *ptr, size_t nfds, bool *isbep, size_t *leftp);
+
+void nvlist_remove_node(const nvlist_t *nvl, struct nvl_node *node);
 
 #endif	/* !_NVLIST_IMPL_H_ */

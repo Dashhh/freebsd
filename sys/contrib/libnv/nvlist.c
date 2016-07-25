@@ -34,9 +34,11 @@ __FBSDID("$FreeBSD$");
 #include <sys/param.h>
 #include <sys/endian.h>
 #include <sys/queue.h>
+#include <sys/tree.h>
 
 #ifdef _KERNEL
 
+#include <sys/ctype.h>
 #include <sys/errno.h>
 #include <sys/kernel.h>
 #include <sys/lock.h>
@@ -48,6 +50,7 @@ __FBSDID("$FreeBSD$");
 #else
 #include <sys/socket.h>
 
+#include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -101,6 +104,7 @@ struct nvlist {
 	nvpair_t	*nvl_parent;
 	nvpair_t	*nvl_array_next;
 	struct nvl_head	 nvl_head;
+	struct nvl_tree	 nvl_tree;
 };
 
 #define	NVLIST_ASSERT(nvl)	do {					\
@@ -124,6 +128,41 @@ struct nvlist_header {
 	uint64_t	nvlh_size;
 } __packed;
 
+static int
+nvlist_find_cmp(struct nvl_node *find, struct nvl_node *node)
+{
+	int res;
+
+	res = strcmp(find->nvln_key, node->nvln_key);
+	if (res == 0) {
+		if (find->nvln_type == NV_TYPE_NONE)
+			return 0;
+		if (find->nvln_type > node->nvln_type)
+			return 1;
+		if (find->nvln_type < node->nvln_type)
+			return -1;
+		return 0;
+	}
+	return res;
+}
+
+static int
+nvlist_insert_cmp(struct nvl_node *a, struct nvl_node *b)
+{
+	int res;
+
+	res = strcmp(a->nvln_key, b->nvln_key);
+	if (res == 0)
+		return a->nvln_type >= b->nvln_type ? 1 : -1;
+	return res;
+}
+
+RB_GENERATE_FIND(nvl_tree, nvl_node, nvln_entry, nvlist_find_cmp, static)
+RB_GENERATE_INSERT_COLOR(nvl_tree, nvl_node, nvln_entry, static)
+RB_GENERATE_INSERT(nvl_tree, nvl_node, nvln_entry, nvlist_insert_cmp, static)
+RB_GENERATE_REMOVE_COLOR(nvl_tree, nvl_node, nvln_entry, static)
+RB_GENERATE_REMOVE(nvl_tree, nvl_node, nvln_entry, static)
+
 nvlist_t *
 nvlist_create(int flags)
 {
@@ -139,6 +178,7 @@ nvlist_create(int flags)
 	nvl->nvl_parent = NULL;
 	nvl->nvl_array_next = NULL;
 	TAILQ_INIT(&nvl->nvl_head);
+	RB_INIT(&nvl->nvl_tree);
 	nvl->nvl_magic = NVLIST_MAGIC;
 
 	return (nvl);
@@ -324,31 +364,36 @@ nvlist_report_missing(int type, const char *name)
 static nvpair_t *
 nvlist_find(const nvlist_t *nvl, int type, const char *name)
 {
-	nvpair_t *nvp;
+	struct nvl_tree *tree;
+	struct nvl_node find, *node;
+	size_t i;
 
 	NVLIST_ASSERT(nvl);
 	PJDLOG_ASSERT(nvl->nvl_error == 0);
 	PJDLOG_ASSERT(type == NV_TYPE_NONE ||
 	    (type >= NV_TYPE_FIRST && type <= NV_TYPE_LAST));
 
-	for (nvp = nvlist_first_nvpair(nvl); nvp != NULL;
-	    nvp = nvlist_next_nvpair(nvl, nvp)) {
-		if (type != NV_TYPE_NONE && nvpair_type(nvp) != type)
-			continue;
-		if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0) {
-			if (strcasecmp(nvpair_name(nvp), name) != 0)
-				continue;
-		} else {
-			if (strcmp(nvpair_name(nvp), name) != 0)
-				continue;
-		}
-		break;
-	}
+	node = NULL;
+	find.nvln_key = nv_strdup(name);
+	if (find.nvln_key == NULL)
+		goto fail;
+	find.nvln_type = type;
+	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
+		for (i = 0 ; i < strlen(find.nvln_key); i++)
+			find.nvln_key[i] = tolower(find.nvln_key[i]);
+	tree = __DECONST(struct nvl_tree *, &nvl->nvl_tree);
+	node = RB_FIND(nvl_tree, tree, &find);
 
-	if (nvp == NULL)
-		ERRNO_SET(ENOENT);
+	if (node == NULL)
+		goto fail;
+	nv_free(find.nvln_key);
+	return TAILQ_FIRST(&node->nvln_head);
 
-	return (nvp);
+fail:
+	if (find.nvln_key != NULL)
+		nv_free(find.nvln_key);
+	ERRNO_SET(ENOENT);
+	return (NULL);
 }
 
 bool
@@ -422,9 +467,6 @@ nvlist_dump_error_check(const nvlist_t *nvl, int fd, int level)
 	return (false);
 }
 
-/*
- * Dump content of nvlist.
- */
 void
 nvlist_dump(const nvlist_t *nvl, int fd)
 {
@@ -1603,6 +1645,59 @@ NVLIST_ADD_ARRAY(const int *, descriptor)
 
 #undef	NVLIST_ADD_ARRAY
 
+static void
+nvlist_insert_node(nvlist_t *nvl, nvpair_t *nvp)
+{
+	struct nvl_node *node, find;
+	size_t i;
+
+	PJDLOG_ASSERT((nvlist_flags(nvl) & NV_FLAG_NO_UNIQUE) != 0 ||
+	    !nvlist_exists(nvl, nvpair_name(nvp)));
+
+	find.nvln_type = nvpair_type(nvp);
+	find.nvln_key = nv_strdup(nvpair_name(nvp));
+	if (find.nvln_key == NULL) {
+		nvpair_free(nvp);
+		return;
+	}
+	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
+		for (i = 0; i < strlen(find.nvln_key); i++)
+			find.nvln_key[i] = tolower(find.nvln_key[i]);
+
+	node = RB_FIND(nvl_tree, &nvl->nvl_tree, &find);
+	nv_free(find.nvln_key);
+
+	if (node != NULL) {
+		nvpair_set_node(nvp, node);
+		return;
+	}
+
+	node = nv_malloc(sizeof(*node));
+	if (node == NULL)
+		goto fail;
+	node->nvln_key = nv_strdup(nvpair_name(nvp));
+	if (node->nvln_key == NULL)
+		goto fail;
+	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
+		for (i = 0; i < strlen(node->nvln_key); i++)
+			node->nvln_key[i] = tolower(node->nvln_key[i]);
+	node->nvln_type = nvpair_type(nvp);
+	if (RB_INSERT(nvl_tree, &nvl->nvl_tree, node) != NULL)
+		goto fail;
+
+	TAILQ_INIT(&node->nvln_head);
+	nvpair_set_node(nvp, node);
+	return;
+
+fail:
+	if (node != NULL) {
+		if (node->nvln_key != NULL)
+			nv_free(node->nvln_key);
+		nv_free(node);
+	}
+	nvpair_free(nvp);
+}
+
 bool
 nvlist_move_nvpair(nvlist_t *nvl, nvpair_t *nvp)
 {
@@ -1624,7 +1719,14 @@ nvlist_move_nvpair(nvlist_t *nvl, nvpair_t *nvp)
 		}
 	}
 
+	nvlist_insert_node(nvl, nvp);
+	if (nvp == NULL) {
+		nvl->nvl_error = ERRNO_OR_DEFAULT(ENOMEM);
+		ERRNO_SET(nvl->nvl_error);
+		return false;
+	}
 	nvpair_insert(&nvl->nvl_head, nvp, nvl);
+
 	return (true);
 }
 
@@ -1966,6 +2068,19 @@ NVLIST_TAKE_ARRAY(nvlist_t **, nvlist, NVLIST)
 #ifndef _KERNEL
 NVLIST_TAKE_ARRAY(int *, descriptor, DESCRIPTOR)
 #endif
+
+void
+nvlist_remove_node(const nvlist_t *nvl, struct nvl_node *node)
+{
+	struct nvl_tree *tree;
+
+	/* XXX: DECONST is bad, mkay? */
+	tree = __DECONST(struct nvl_tree *, &nvl->nvl_tree);
+
+	RB_REMOVE(nvl_tree, tree, node);
+	nv_free(node->nvln_key);
+	nv_free(node);
+}
 
 void
 nvlist_remove_nvpair(nvlist_t *nvl, nvpair_t *nvp)

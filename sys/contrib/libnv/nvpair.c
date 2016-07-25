@@ -90,6 +90,8 @@ struct nvpair {
 	size_t		 nvp_nitems;	/* Used only for array types. */
 	nvlist_t	*nvp_list;
 	TAILQ_ENTRY(nvpair) nvp_next;
+	TAILQ_ENTRY(nvpair) nvp_node_next;
+	struct nvl_node	*nvp_node;
 };
 
 #define	NVPAIR_ASSERT(nvp)	do {					\
@@ -177,8 +179,6 @@ nvpair_insert(struct nvl_head *head, nvpair_t *nvp, nvlist_t *nvl)
 
 	NVPAIR_ASSERT(nvp);
 	PJDLOG_ASSERT(nvp->nvp_list == NULL);
-	PJDLOG_ASSERT((nvlist_flags(nvl) & NV_FLAG_NO_UNIQUE) != 0 ||
-	    !nvlist_exists(nvl, nvpair_name(nvp)));
 
 	TAILQ_INSERT_TAIL(head, nvp, nvp_next);
 	nvp->nvp_list = nvl;
@@ -221,6 +221,9 @@ nvpair_remove(struct nvl_head *head, nvpair_t *nvp, const nvlist_t *nvl)
 		nvpair_remove_nvlist_array(nvp);
 
 	TAILQ_REMOVE(head, nvp, nvp_next);
+	TAILQ_REMOVE(&nvp->nvp_node->nvln_head, nvp, nvp_node_next);
+	if (TAILQ_EMPTY(&nvp->nvp_node->nvln_head))
+		nvlist_remove_node(nvl, nvp->nvp_node);
 	nvp->nvp_list = NULL;
 }
 
@@ -1995,3 +1998,14 @@ nvpair_type_string(int type)
 	}
 }
 
+
+void
+nvpair_set_node(nvpair_t *nvp, struct nvl_node *node)
+{
+
+	NVPAIR_ASSERT(nvp);
+	PJDLOG_ASSERT(nvp->nvp_list == NULL);
+
+	nvp->nvp_node = node;
+	TAILQ_INSERT_TAIL(&node->nvln_head, nvp, nvp_node_next);
+}
