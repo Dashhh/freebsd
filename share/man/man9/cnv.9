@@ -25,7 +25,7 @@
 .\"
 .\" $FreeBSD$
 .\"
-.Dd June 26, 2016
+.Dd July 25, 2016
 .Dt CNV 9
 .Os
 .Sh NAME
@@ -125,8 +125,9 @@ from
 The
 .Nm cnvlist_get
 family of functions obtains the value of the supplied cookie.
-In case of string, nvlist, descriptor, binary or any array, returned resource
-should not be modified - it still belongs to the nvlist.
+Returned strings, nvlists, descriptors, binaries or arrays must not be modified
+by the user.
+They still belong to the nvlist.
 The nvlist must not be in error state.
 .Pp
 The
