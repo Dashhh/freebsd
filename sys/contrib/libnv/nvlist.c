@@ -143,7 +143,8 @@ nvlist_find_cmp(struct nvl_node *find, struct nvl_node *node)
 			return -1;
 		return 0;
 	}
-	return res;
+
+	return (res);
 }
 
 static int
@@ -154,7 +155,8 @@ nvlist_insert_cmp(struct nvl_node *a, struct nvl_node *b)
 	res = strcmp(a->nvln_key, b->nvln_key);
 	if (res == 0)
 		return a->nvln_type >= b->nvln_type ? 1 : -1;
-	return res;
+
+	return (res);
 }
 
 RB_GENERATE_FIND(nvl_tree, nvl_node, nvln_entry, nvlist_find_cmp, static)
@@ -378,9 +380,10 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 	if (find.nvln_key == NULL)
 		goto fail;
 	find.nvln_type = type;
-	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
+	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0) {
 		for (i = 0 ; i < strlen(find.nvln_key); i++)
 			find.nvln_key[i] = tolower(find.nvln_key[i]);
+	}
 	tree = __DECONST(struct nvl_tree *, &nvl->nvl_tree);
 	node = RB_FIND(nvl_tree, tree, &find);
 
@@ -467,6 +470,9 @@ nvlist_dump_error_check(const nvlist_t *nvl, int fd, int level)
 	return (false);
 }
 
+/*
+ * Dump content of nvlist.
+ */
 void
 nvlist_dump(const nvlist_t *nvl, int fd)
 {
@@ -1660,9 +1666,10 @@ nvlist_insert_node(nvlist_t *nvl, nvpair_t *nvp)
 		nvpair_free(nvp);
 		return;
 	}
-	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
+	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0) {
 		for (ii = 0; ii < strlen(find.nvln_key); ii++)
 			find.nvln_key[ii] = tolower(find.nvln_key[ii]);
+	}
 
 	node = RB_FIND(nvl_tree, &nvl->nvl_tree, &find);
 	nv_free(find.nvln_key);
@@ -1678,9 +1685,10 @@ nvlist_insert_node(nvlist_t *nvl, nvpair_t *nvp)
 	node->nvln_key = nv_strdup(nvpair_name(nvp));
 	if (node->nvln_key == NULL)
 		goto fail;
-	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
+	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0) {
 		for (ii = 0; ii < strlen(node->nvln_key); ii++)
 			node->nvln_key[ii] = tolower(node->nvln_key[ii]);
+	}
 
 	if (RB_INSERT(nvl_tree, &nvl->nvl_tree, node) != NULL)
 		goto fail;
@@ -1723,7 +1731,7 @@ nvlist_move_nvpair(nvlist_t *nvl, nvpair_t *nvp)
 	if (nvp == NULL) {
 		nvl->nvl_error = ERRNO_OR_DEFAULT(ENOMEM);
 		ERRNO_SET(nvl->nvl_error);
-		return false;
+		return (false);
 	}
 	nvpair_insert(&nvl->nvl_head, nvp, nvl);
 

@@ -1998,7 +1998,6 @@ nvpair_type_string(int type)
 	}
 }
 
-
 void
 nvpair_set_node(nvpair_t *nvp, struct nvl_node *node)
 {

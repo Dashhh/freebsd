@@ -46,11 +46,11 @@
 RB_HEAD(nvl_tree, nvl_node);
 
 /* Queue for elements with the same type and name. */
-TAILQ_HEAD(nvln_head, nvpair); 
+TAILQ_HEAD(nvln_list, nvpair); 
 
 struct nvl_node {
 	RB_ENTRY(nvl_node)	 nvln_entry;    /* RB_TREE interface */
-	struct nvln_head	 nvln_head;	/* nvpair list */
+	struct nvln_list	 nvln_head;	/* nvpair list */
 
 	/* Dumped pair's name. If flag NV_NO_UNIQUE set, name is lowercased. */
 	char			*nvln_key;
