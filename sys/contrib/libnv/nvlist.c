@@ -1649,7 +1649,7 @@ static void
 nvlist_insert_node(nvlist_t *nvl, nvpair_t *nvp)
 {
 	struct nvl_node *node, find;
-	size_t i;
+	size_t ii;
 
 	PJDLOG_ASSERT((nvlist_flags(nvl) & NV_FLAG_NO_UNIQUE) != 0 ||
 	    !nvlist_exists(nvl, nvpair_name(nvp)));
@@ -1661,12 +1661,11 @@ nvlist_insert_node(nvlist_t *nvl, nvpair_t *nvp)
 		return;
 	}
 	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
-		for (i = 0; i < strlen(find.nvln_key); i++)
-			find.nvln_key[i] = tolower(find.nvln_key[i]);
+		for (ii = 0; ii < strlen(find.nvln_key); ii++)
+			find.nvln_key[ii] = tolower(find.nvln_key[ii]);
 
 	node = RB_FIND(nvl_tree, &nvl->nvl_tree, &find);
 	nv_free(find.nvln_key);
-
 	if (node != NULL) {
 		nvpair_set_node(nvp, node);
 		return;
@@ -1675,13 +1674,14 @@ nvlist_insert_node(nvlist_t *nvl, nvpair_t *nvp)
 	node = nv_malloc(sizeof(*node));
 	if (node == NULL)
 		goto fail;
+	node->nvln_type = nvpair_type(nvp);
 	node->nvln_key = nv_strdup(nvpair_name(nvp));
 	if (node->nvln_key == NULL)
 		goto fail;
 	if ((nvl->nvl_flags & NV_FLAG_IGNORE_CASE) != 0)
-		for (i = 0; i < strlen(node->nvln_key); i++)
-			node->nvln_key[i] = tolower(node->nvln_key[i]);
-	node->nvln_type = nvpair_type(nvp);
+		for (ii = 0; ii < strlen(node->nvln_key); ii++)
+			node->nvln_key[ii] = tolower(node->nvln_key[ii]);
+
 	if (RB_INSERT(nvl_tree, &nvl->nvl_tree, node) != NULL)
 		goto fail;
 

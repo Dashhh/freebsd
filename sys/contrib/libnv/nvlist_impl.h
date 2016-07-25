@@ -40,16 +40,21 @@
 #include <stdint.h>
 #endif
 
+/* Red-black tree. Each node represents list of nvpairs with specified name and
+ * type.
+ */
 RB_HEAD(nvl_tree, nvl_node);
-TAILQ_HEAD(nvln_head, nvpair);
+
+/* Queue for elements with the same type and name. */
+TAILQ_HEAD(nvln_head, nvpair); 
 
 struct nvl_node {
 	RB_ENTRY(nvl_node)	 nvln_entry;    /* RB_TREE interface */
-	struct nvln_head	 nvln_head;	/* Nvpair elements list */
+	struct nvln_head	 nvln_head;	/* nvpair list */
 
 	/* Dumped pair's name. If flag NV_NO_UNIQUE set, name is lowercased. */
 	char			*nvln_key;
-	int			 nvln_type;     /* Type of pair. */
+	int			 nvln_type;     /* Type of pair */
 };
 
 nvpair_t *nvlist_get_nvpair_parent(const nvlist_t *nvl);
