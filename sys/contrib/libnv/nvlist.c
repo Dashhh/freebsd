@@ -131,10 +131,8 @@ struct nvlist_header {
 static int
 nvlist_find_cmp(struct nvl_node *find, struct nvl_node *node)
 {
-	int res;
 
-	res = strcmp(find->nvln_key, node->nvln_key);
-	if (res == 0) {
+	if (strcmp(find->nvln_key, node->nvln_key) == 0) {
 		if (find->nvln_type == NV_TYPE_NONE)
 			return 0;
 		if (find->nvln_type > node->nvln_type)
@@ -144,19 +142,17 @@ nvlist_find_cmp(struct nvl_node *find, struct nvl_node *node)
 		return 0;
 	}
 
-	return (res);
+	return (strcmp(find->nvln_key, node->nvln_key));
 }
 
 static int
 nvlist_insert_cmp(struct nvl_node *a, struct nvl_node *b)
 {
-	int res;
 
-	res = strcmp(a->nvln_key, b->nvln_key);
-	if (res == 0)
+	if (strcmp(a->nvln_key, b->nvln_key) == 0)
 		return a->nvln_type >= b->nvln_type ? 1 : -1;
 
-	return (res);
+	return (strcmp(a->nvln_key, b->nvln_key));
 }
 
 RB_GENERATE_FIND(nvl_tree, nvl_node, nvln_entry, nvlist_find_cmp, static)
