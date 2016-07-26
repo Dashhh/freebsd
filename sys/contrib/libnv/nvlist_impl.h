@@ -46,7 +46,7 @@
 RB_HEAD(nvl_tree, nvl_node);
 
 /* Queue for elements with the same type and name. */
-TAILQ_HEAD(nvln_list, nvpair); 
+TAILQ_HEAD(nvln_list, nvpair);
 
 struct nvl_node {
 	RB_ENTRY(nvl_node)	 nvln_entry;    /* RB_TREE interface */
