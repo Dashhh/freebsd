@@ -134,12 +134,12 @@ nvlist_find_cmp(struct nvl_node *find, struct nvl_node *node)
 
 	if (strcmp(find->nvln_key, node->nvln_key) == 0) {
 		if (find->nvln_type == NV_TYPE_NONE)
-			return 0;
+			return (0);
 		if (find->nvln_type > node->nvln_type)
-			return 1;
+			return (1);
 		if (find->nvln_type < node->nvln_type)
-			return -1;
-		return 0;
+			return (-1);
+		return (0);
 	}
 
 	return (strcmp(find->nvln_key, node->nvln_key));
@@ -150,7 +150,7 @@ nvlist_insert_cmp(struct nvl_node *a, struct nvl_node *b)
 {
 
 	if (strcmp(a->nvln_key, b->nvln_key) == 0)
-		return a->nvln_type >= b->nvln_type ? 1 : -1;
+		return (a->nvln_type >= b->nvln_type ? 1 : -1);
 
 	return (strcmp(a->nvln_key, b->nvln_key));
 }
