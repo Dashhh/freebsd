@@ -110,6 +110,7 @@ const unsigned char *nvpair_unpack_descriptor_array(bool isbe, nvpair_t *nvp,
 const unsigned char *nvpair_unpack_nvlist_array(bool isbe, nvpair_t *nvp,
     const unsigned char *ptr, size_t *leftp, nvlist_t **firstel);
 
+/* Bond node with nvpair */
 void nvpair_set_node(nvpair_t *nvp, struct nvl_node *node);
 
 #endif	/* !_NVPAIR_IMPL_H_ */

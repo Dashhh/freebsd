@@ -371,7 +371,6 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 	PJDLOG_ASSERT(type == NV_TYPE_NONE ||
 	    (type >= NV_TYPE_FIRST && type <= NV_TYPE_LAST));
 
-	node = NULL;
 	find.nvln_key = nv_strdup(name);
 	if (find.nvln_key == NULL)
 		goto fail;
@@ -380,14 +379,14 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 		for (i = 0 ; i < strlen(find.nvln_key); i++)
 			find.nvln_key[i] = tolower(find.nvln_key[i]);
 	}
+
 	tree = __DECONST(struct nvl_tree *, &nvl->nvl_tree);
 	node = RB_FIND(nvl_tree, tree, &find);
-
 	if (node == NULL)
 		goto fail;
 	nv_free(find.nvln_key);
-	return TAILQ_FIRST(&node->nvln_head);
 
+	return (TAILQ_FIRST(&node->nvln_head));
 fail:
 	if (find.nvln_key != NULL)
 		nv_free(find.nvln_key);
@@ -1691,8 +1690,8 @@ nvlist_insert_node(nvlist_t *nvl, nvpair_t *nvp)
 
 	TAILQ_INIT(&node->nvln_head);
 	nvpair_set_node(nvp, node);
-	return;
 
+	return;
 fail:
 	if (node != NULL) {
 		if (node->nvln_key != NULL)
@@ -2078,7 +2077,6 @@ nvlist_remove_node(const nvlist_t *nvl, struct nvl_node *node)
 {
 	struct nvl_tree *tree;
 
-	/* XXX: DECONST is bad, mkay? */
 	tree = __DECONST(struct nvl_tree *, &nvl->nvl_tree);
 
 	RB_REMOVE(nvl_tree, tree, node);
