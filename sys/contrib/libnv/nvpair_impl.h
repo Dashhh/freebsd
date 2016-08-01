@@ -47,7 +47,7 @@ nvlist_t *nvpair_nvlist(const nvpair_t *nvp);
 nvpair_t *nvpair_next(const nvpair_t *nvp);
 nvpair_t *nvpair_prev(const nvpair_t *nvp);
 void nvpair_insert(struct nvl_head *head, nvpair_t *nvp, nvlist_t *nvl);
-void nvpair_remove(struct nvl_head *head, nvpair_t *nvp, const nvlist_t *nvl);
+void nvpair_remove(struct nvl_head *head, nvpair_t *nvp, nvlist_t *nvl);
 size_t nvpair_header_size(void);
 size_t nvpair_size(const nvpair_t *nvp);
 const unsigned char *nvpair_unpack(bool isbe, const unsigned char *ptr,
@@ -110,7 +110,7 @@ const unsigned char *nvpair_unpack_descriptor_array(bool isbe, nvpair_t *nvp,
 const unsigned char *nvpair_unpack_nvlist_array(bool isbe, nvpair_t *nvp,
     const unsigned char *ptr, size_t *leftp, nvlist_t **firstel);
 
-/* Bond node with nvpair */
+/* Bond node with nvpair. */
 void nvpair_set_node(nvpair_t *nvp, struct nvl_node *node);
 
 #endif	/* !_NVPAIR_IMPL_H_ */

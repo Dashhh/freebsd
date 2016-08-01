@@ -29,7 +29,7 @@
 
 SUBDIR=		libatf-c \
 		libatf-c++ \
-                ${_tests}
+#                ${_tests}
 
 .if ${MK_TESTS} != "no"
 _tests= 	tests

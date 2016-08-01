@@ -209,11 +209,12 @@ nvpair_remove_nvlist_array(nvpair_t *nvp)
 }
 
 void
-nvpair_remove(struct nvl_head *head, nvpair_t *nvp, const nvlist_t *nvl)
+nvpair_remove(struct nvl_head *head, nvpair_t *nvp, nvlist_t *nvl)
 {
 
 	NVPAIR_ASSERT(nvp);
 	PJDLOG_ASSERT(nvp->nvp_list == nvl);
+	PJDLOG_ASSERT(nvp->nvp_node != NULL);
 
 	if (nvpair_type(nvp) == NV_TYPE_NVLIST)
 		nvpair_remove_nvlist(nvp);

@@ -33,8 +33,8 @@ __FBSDID("$FreeBSD$");
 
 #include <sys/param.h>
 #include <sys/endian.h>
-#include <sys/queue.h>
 #include <sys/tree.h>
+#include <sys/queue.h>
 
 #ifdef _KERNEL
 
@@ -131,8 +131,10 @@ struct nvlist_header {
 static int
 nvlist_find_cmp(struct nvl_node *find, struct nvl_node *node)
 {
+	int res;
 
-	if (strcmp(find->nvln_key, node->nvln_key) == 0) {
+	res = strcmp(find->nvln_key, node->nvln_key);
+	if (res == 0) {
 		if (find->nvln_type == NV_TYPE_NONE)
 			return (0);
 		if (find->nvln_type > node->nvln_type)
@@ -142,17 +144,19 @@ nvlist_find_cmp(struct nvl_node *find, struct nvl_node *node)
 		return (0);
 	}
 
-	return (strcmp(find->nvln_key, node->nvln_key));
+	return (res);
 }
 
 static int
 nvlist_insert_cmp(struct nvl_node *a, struct nvl_node *b)
 {
+	int res;
 
-	if (strcmp(a->nvln_key, b->nvln_key) == 0)
+	res = strcmp(a->nvln_key, b->nvln_key);
+	if (res == 0)
 		return (a->nvln_type >= b->nvln_type ? 1 : -1);
 
-	return (strcmp(a->nvln_key, b->nvln_key));
+	return (res);
 }
 
 RB_GENERATE_FIND(nvl_tree, nvl_node, nvln_entry, nvlist_find_cmp, static)
@@ -2073,13 +2077,10 @@ NVLIST_TAKE_ARRAY(int *, descriptor, DESCRIPTOR)
 #endif
 
 void
-nvlist_remove_node(const nvlist_t *nvl, struct nvl_node *node)
+nvlist_remove_node(nvlist_t *nvl, struct nvl_node *node)
 {
-	struct nvl_tree *tree;
 
-	tree = __DECONST(struct nvl_tree *, &nvl->nvl_tree);
-
-	RB_REMOVE(nvl_tree, tree, node);
+	RB_REMOVE(nvl_tree, &nvl->nvl_tree, node);
 	nv_free(node->nvln_key);
 	nv_free(node);
 }

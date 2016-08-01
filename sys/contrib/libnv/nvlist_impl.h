@@ -58,7 +58,7 @@ struct nvl_node {
 };
 
 nvpair_t *nvlist_get_nvpair_parent(const nvlist_t *nvl);
-void nvlist_remove_node(const nvlist_t *nvl, struct nvl_node *node);
+void nvlist_remove_node(nvlist_t *nvl, struct nvl_node *node);
 const unsigned char *nvlist_unpack_header(nvlist_t *nvl,
     const unsigned char *ptr, size_t nfds, bool *isbep, size_t *leftp);
 
