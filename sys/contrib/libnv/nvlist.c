@@ -384,6 +384,7 @@ nvlist_find(const nvlist_t *nvl, int type, const char *name)
 			find.nvln_key[i] = tolower(find.nvln_key[i]);
 	}
 
+	/* It should be constant, but RB_FIND() takes non-constant arguments. */
 	tree = __DECONST(struct nvl_tree *, &nvl->nvl_tree);
 	node = RB_FIND(nvl_tree, tree, &find);
 	if (node == NULL)
