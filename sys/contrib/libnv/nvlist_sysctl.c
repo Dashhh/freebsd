@@ -1,10 +1,6 @@
 /*-
- * Copyright (c) 2009-2013 The FreeBSD Foundation
- * Copyright (c) 2013-2015 Mariusz Zaborski <oshogbo@FreeBSD.org>
+ * Copyright (c) 2016 Adam Starak <starak.adam@gmail.com>
  * All rights reserved.
- *
- * This software was developed by Pawel Jakub Dawidek under sponsorship from
- * the FreeBSD Foundation.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -225,9 +221,13 @@ nvlist_sysctl(const char *name, nvlist_t *old, nvlist_t *new)
 	if (old != NULL) {
 		if (!nvlist_sysctl_format(mib, size, &kind))
 			return (-1);
-		printf("%d\n", CTLTYPE & kind);
+
 		switch(kind & CTLTYPE) {
 		case CTLTYPE_NODE:
+			if (!nvlist_sysctl_get_binary(old, name, mib+2,
+			    size-2)) {
+				return (-1);
+			}
 			break;
 		case CTLTYPE_INT:
 			if (!nvlist_sysctl_get_number(old, name, mib+2,
