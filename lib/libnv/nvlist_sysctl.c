@@ -28,42 +28,19 @@
 __FBSDID("$FreeBSD$");
 
 #include <sys/param.h>
-#include <sys/endian.h>
-#include <sys/queue.h>
 #include <sys/sysctl.h>
-
-#ifdef _KERNEL
-
-#include <sys/errno.h>
-#include <sys/kernel.h>
-#include <sys/lock.h>
-#include <sys/malloc.h>
-#include <sys/systm.h>
-
-#include <machine/stdarg.h>
-
-#else
-#include <sys/socket.h>
+#include <sys/nv.h>
 
 #include <errno.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdint.h>
-#define	_WITH_DPRINTF
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <errno.h>
 
 #include "msgio.h"
-#endif
 
 #ifdef HAVE_PJDLOG
 #include <pjdlog.h>
 #endif
 
-#include <sys/nv.h>
 
 static bool
 nvlist_sysctl_format(int *mib, const char *name, size_t *miblen, u_int *kind)
@@ -250,7 +227,7 @@ nvlist_sysctl_set_number(nvlist_t *new, const char *name)
 	if (!nvlist_sysctl_format(mib, name, &size, &kind))
 		return (false);
 
-	switch(kind & CTLTYPE) {
+	switch(kind) {
 	case CTLTYPE_INT:
 		if (!nvlist_sysctl_set_int(new, name, mib+2, size-2))
 			return (false);
@@ -353,7 +330,7 @@ nvlist_sysctl_set_number_array(nvlist_t *new, const char *name)
 	if (!nvlist_sysctl_format(mib, name, &size, &kind))
 		return (false);
 
-	switch(kind & CTLTYPE) {
+	switch(kind) {
 	case CTLTYPE_INT:
 		if (!nvlist_sysctl_set_int_array(new, name, mib+2, size-2))
 			return (false);
@@ -422,8 +399,6 @@ nvlist_sysctl_set_string(nvlist_t *nvl, const char *name)
 	string = nvlist_get_string(nvl, name);
 
 	res = sysctl(mib, miblen, NULL, NULL, string, strlen(string)) == 0;
-	if (!res)
-		perror("sysctlbyname");
 
 	return (res);
 }
@@ -453,7 +428,7 @@ nvlist_sysctl_old(nvlist_t *old)
 	nvlist_t *values;
 
 	if (old == NULL)
-		return true;
+		return (true);
 
 	values = nvlist_create(0);
 	cookie = NULL;
@@ -625,11 +600,11 @@ int
 nvlist_sysctl(nvlist_t *old, nvlist_t *new)
 {
 
-	if (!nvlist_sysctl_old(old))
-		return (-1);
+	if (nvlist_sysctl_old(old) && nvlist_sysctl_new(new))
+		return (0);
 
-	if (!nvlist_sysctl_new(new))
-		return (-1);
+	if (nvlist_exists_nvlist(old, ""))
+		nvlist_free_nvlist(old, "");
 
-	return (0);
+	return (-1);
 }
