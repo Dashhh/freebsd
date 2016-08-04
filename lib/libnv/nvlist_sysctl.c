@@ -41,7 +41,6 @@ __FBSDID("$FreeBSD$");
 #include <pjdlog.h>
 #endif
 
-
 static bool
 nvlist_sysctl_format(int *mib, const char *name, size_t *miblen, u_int *kind)
 {

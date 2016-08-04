@@ -39,7 +39,6 @@
 #include <stdint.h>
 #endif
 
-int nvlist_sysctl(nvlist_t *old, nvlist_t *new);
 nvpair_t *nvlist_get_nvpair_parent(const nvlist_t *nvl);
 const unsigned char *nvlist_unpack_header(nvlist_t *nvl,
     const unsigned char *ptr, size_t nfds, bool *isbep, size_t *leftp);
