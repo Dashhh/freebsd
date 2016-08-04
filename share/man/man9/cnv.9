@@ -153,6 +153,43 @@ family of functions removes element of the given cookie and free all resources
 associated with it.
 If element of the given cookie has wrong type or does not exist, the program
 will be aborted.
+.Sh Example
+The following example demonstrates how to deal with cnvlist API.
+.Bd -literal
+int type;
+void *cookie, *scookie, *bcookie;
+nvlist_t *nvl;
+char *name;
+
+nvl = nvlist_create(0);
+nvlist_add_bool(nvl, "test", 1 == 2);
+nvlist_add_string(nvl, "test2", "cnvlist");
+cookie = NULL;
+
+while (nvlist_next(nvl, &type, &cookie) != NULL) {
+        switch(type) {
+        case NV_TYPE_BOOL:
+                printf("test: %d\\n", cnvlist_get_bool(cookie));
+                bcookie = cookie;
+                break;
+        case NV_TYPE_STRING:
+                printf("test2: %s\\n", cnvlist_get_string(cookie));
+                scookie = cookie;
+                break;
+        }
+}
+
+name = cnvlist_take_string(nvl, scookie);
+cnvlist_free_bool(nvl, bcookie);
+
+printf("test2: %s\\n", name);
+free(name);
+
+printf("nvlist_empty = %d\\n", nvlist_empty(nvl));
+nvlist_destroy(nvl);
+
+return (0);
+.Ed
 .Sh SEE ALSO
 .Xr nv 9 ,
 .Xr close 2 ,
