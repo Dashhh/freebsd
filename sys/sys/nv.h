@@ -241,7 +241,7 @@ void nvlist_free_descriptor(nvlist_t *nvl, const char *name);
 void nvlist_free_descriptor_array(nvlist_t *nvl, const char *name);
 #endif
 
-int nvlist_sysctl(const char *name, nvlist_t *old, nvlist_t *new);
+int nvlist_sysctl(nvlist_t *old, nvlist_t *new);
 
 __END_DECLS
 
