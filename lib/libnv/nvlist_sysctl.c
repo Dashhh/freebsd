@@ -42,7 +42,7 @@ __FBSDID("$FreeBSD$");
 #endif
 
 static bool
-nvlist_sysctl_null_format(int *mib, const char *name, size_t *miblen,
+nvlist_sysctl_name_format(int *mib, const char *name, size_t *miblen,
     u_int *kind)
 {
 	u_int *buff;
@@ -259,7 +259,7 @@ nvlist_sysctl_set_number(nvlist_t *newp, const char *name)
 	size_t size;
 
 	size = CTL_MAXNAME+2;
-	if (!nvlist_sysctl_null_format(mib, name, &size, &kind))
+	if (!nvlist_sysctl_name_format(mib, name, &size, &kind))
 		return (false);
 
 	switch(kind) {
@@ -362,7 +362,7 @@ nvlist_sysctl_set_number_array(nvlist_t *newp, const char *name)
 	size_t size;
 
 	size = CTL_MAXNAME+2;
-	if (!nvlist_sysctl_null_format(mib, name, &size, &kind))
+	if (!nvlist_sysctl_name_format(mib, name, &size, &kind))
 		return (false);
 
 	switch(kind) {
@@ -474,7 +474,7 @@ nvlist_sysctl_old(nvlist_t *oldp)
 			goto fail;
 
 		if (type == NV_TYPE_NULL &&
-		    !nvlist_sysctl_null_format(mib, name, &size, &kind))
+		    !nvlist_sysctl_name_format(mib, name, &size, &kind))
 			goto fail;
 
 		if (type == NV_TYPE_NUMBER_ARRAY &&
