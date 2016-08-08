@@ -71,9 +71,9 @@ For more information, also see
 The
 .Nm dnvlist_get
 family of functions returns the value associated with the specified name.
-If an element of the specified name does not exist, the function will return the
+If an element of the specified name does not exist, the function returns the
 value provided in defval.
-Returned strings, nvlists, descriptors, binaries or arrays must not be modified
+Returned strings, nvlists, descriptors, binaries, or arrays must not be modified
 by the user.
 They still belong to the nvlist.
 If the nvlist is in an error state, attempts to use any of these functions will
@@ -88,16 +88,13 @@ If an element of the supplied name does not exist, the value provided in
 is returned.
 When the value is a string, binary, or array value, the caller is
 responsible for freeing returned memory with
-.Fn free 3
-function.
+.Fn free 3 .
 When the value is an nvlist, the caller is responsible for destroying the
 returned nvlist with
-.Fn nvlist_destroy
-function.
+.Fn nvlist_destroy .
 When the value is a descriptor, the caller is responsible for closing the
 returned descriptor with
-.Fn close 2
-system call.
+.Fn close 2 .
 .Sh SEE ALSO
 .Xr close 2 ,
 .Xr free 3
