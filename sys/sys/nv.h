@@ -245,7 +245,7 @@ void nvlist_free_descriptor_array(nvlist_t *nvl, const char *name);
  * The nvlist_sysctl function gets and sets kernel states.
  */
 
-int nvlist_sysctl(nvlist_t *old, nvlist_t *new);
+int nvlist_sysctl(nvlist_t *oldp, nvlist_t *newp);
 
 __END_DECLS
 
