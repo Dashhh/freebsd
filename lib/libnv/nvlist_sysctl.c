@@ -4,10 +4,7 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
+ * are met: * 1. Redistributions of source code must retain the above copyright *    notice, this list of conditions and the following disclaimer.  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
@@ -70,11 +67,70 @@ nvlist_sysctl_name_format(int *mib, const char *name, size_t *miblen,
 	*kind = buff[0] & CTLTYPE;
 	free(buff);
 
+	*miblen -= 2;
+	memcpy(mib, &mib[2], sizeof(*mib)*(*miblen));
+
 	return (true);
 }
 
 static bool
-nvlist_sysctl_number_format(nvlist_t *old, int *mib, const char *name,
+nvlist_sysctl_type(const nvlist_t *nvl, const char *value, int *type)
+{
+	void *cookie;
+	const char *name;
+
+	cookie = NULL;
+	while ((name = nvlist_next(nvl, type, &cookie)) != NULL) {
+		if (strcmp(name, value) == 0)
+			return (true);
+	}
+	return (false);
+}
+
+static bool
+nvlist_sysctl_nvlist_format(nvlist_t *newp, int *mib, const char *name,
+    size_t *miblen, u_int *kind, int *type)
+{
+	const uint64_t *value;
+	size_t size;
+	const nvlist_t *nvl;
+	u_int *buff;
+
+	nvl = nvlist_get_nvlist(newp, name);
+	value = nvlist_get_number_array(nvl, "mib", &size);
+
+	mib[0] = 0;
+	mib[1] = 4;
+	memcpy(&mib[2], value, sizeof(*mib)*size);
+	*miblen = size+2;
+
+	if (sysctl(mib, *miblen, NULL, &size, NULL, 0) < 0)
+		return (false);
+
+	buff = malloc(sizeof(*buff)*size);
+	size = sizeof(*buff)*size;
+	if (buff == NULL)
+		return (false);
+
+	if (sysctl(mib, *miblen, buff, &size, NULL, 0) < 0) {
+		free(buff);
+		return (false);
+	}
+
+	*kind = buff[0] & CTLTYPE;
+	free(buff);
+
+	*miblen -= 2;
+	memcpy(mib, &mib[2], sizeof(*mib)*(*miblen));
+
+	if (!nvlist_sysctl_type(nvl, "value", type))
+		return (false);
+
+	return (true);
+}
+
+static bool
+nvlist_sysctl_number_format(const nvlist_t *oldp, int *mib, const char *name,
     size_t *miblen, u_int *kind)
 {
 	const uint64_t *arr;
@@ -84,7 +140,7 @@ nvlist_sysctl_number_format(nvlist_t *old, int *mib, const char *name,
 	mib[0] = 0;
 	mib[1] = 4;
 
-	arr = nvlist_get_number_array(old, name, miblen);
+	arr = nvlist_get_number_array(oldp, name, miblen);
 
 	memcpy(&mib[2], arr, sizeof(*mib)*(*miblen));
 	*miblen += 2;
@@ -104,6 +160,9 @@ nvlist_sysctl_number_format(nvlist_t *old, int *mib, const char *name,
 
 	*kind = buff[0] & CTLTYPE;
 	free(buff);
+
+	*miblen -= 2;
+	memcpy(mib, &mib[2], sizeof(*mib)*(*miblen));
 
 	return (true);
 }
@@ -217,7 +276,7 @@ fail:
 
 #define	NVLIST_SYSCTL_SET_NUMBER(type, fname)				\
 static bool								\
-nvlist_sysctl_set_##fname(nvlist_t *nvl, const char *name,		\
+nvlist_sysctl_set_##fname(const nvlist_t *nvl, const char *name,	\
     const int *mib, size_t miblen)					\
 {									\
 	uint64_t number;						\
@@ -252,7 +311,7 @@ NVLIST_SYSCTL_SET_NUMBER(uint32_t, u32)
 #undef NVLIST_SYSCTL_SET_NUMBER
 
 static bool
-nvlist_sysctl_set_number(nvlist_t *newp, const char *name, const int *mib,
+nvlist_sysctl_set_number(const nvlist_t *newp, const char *name, const int *mib,
     size_t miblen, u_int kind)
 {
 
@@ -312,8 +371,8 @@ nvlist_sysctl_set_number(nvlist_t *newp, const char *name, const int *mib,
 
 #define	NVLIST_SYSCTL_SET_NUMBER_ARRAY(type, fname)			\
 static bool								\
-nvlist_sysctl_set_##fname##_array(nvlist_t *nvl, const char *name,	\
-	const int *mib, size_t miblen)					\
+nvlist_sysctl_set_##fname##_array(const nvlist_t *nvl,			\
+    const char *name, const int *mib, size_t miblen)			\
 {									\
 	const uint64_t *number;						\
 	size_t size;							\
@@ -349,8 +408,8 @@ NVLIST_SYSCTL_SET_NUMBER_ARRAY(uint32_t, u32)
 #undef NVLIST_SYSCTL_SET_NUMBER
 
 static bool
-nvlist_sysctl_set_number_array(nvlist_t *newp, const char *name, const int *mib,
-    size_t miblen, u_int kind)
+nvlist_sysctl_set_number_array(const nvlist_t *newp, const char *name,
+    const int *mib, size_t miblen, u_int kind)
 {
 
 	switch(kind) {
@@ -409,7 +468,7 @@ nvlist_sysctl_set_number_array(nvlist_t *newp, const char *name, const int *mib,
 
 
 static bool
-nvlist_sysctl_set_string(nvlist_t *nvl, const char *name, const int *mib,
+nvlist_sysctl_set_string(const nvlist_t *nvl, const char *name, const int *mib,
     size_t miblen)
 {
 	const char *string;
@@ -420,7 +479,7 @@ nvlist_sysctl_set_string(nvlist_t *nvl, const char *name, const int *mib,
 }
 
 static bool
-nvlist_sysctl_set_binary(nvlist_t *nvl, const char *name, const int *mib,
+nvlist_sysctl_set_binary(const nvlist_t *nvl, const char *name, const int *mib,
     size_t miblen)
 {
 	size_t size;
@@ -462,92 +521,92 @@ nvlist_sysctl_old(nvlist_t *oldp)
 
 		switch(kind & CTLTYPE) {
 		case CTLTYPE_NODE:
-			if (!nvlist_sysctl_get_binary(values, name, mib+2,
-			    size-2)) {
+			if (!nvlist_sysctl_get_binary(values, name, mib,
+			    size)) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_INT:
-			if (!nvlist_sysctl_get_number(values, name, mib+2,
-			    size-2, sizeof(int))) {
+			if (!nvlist_sysctl_get_number(values, name, mib,
+			    size, sizeof(int))) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_STRING:
-			if (!nvlist_sysctl_get_string(values, name, mib+2,
-			    size-2)) {
+			if (!nvlist_sysctl_get_string(values, name, mib,
+			    size)) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_S64:
-			if (!nvlist_sysctl_get_number(values, name, mib+2,
-			    size-2, sizeof(int64_t))) {
+			if (!nvlist_sysctl_get_number(values, name, mib,
+			    size, sizeof(int64_t))) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_OPAQUE:
-			if (!nvlist_sysctl_get_binary(values, name, mib+2,
-			    size-2)) {
+			if (!nvlist_sysctl_get_binary(values, name, mib,
+			    size)) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_UINT:
-			if (!nvlist_sysctl_get_number(values, name, mib+2,
-			    size-2, sizeof(u_int))) {
+			if (!nvlist_sysctl_get_number(values, name, mib,
+			    size, sizeof(u_int))) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_LONG:
-			if (!nvlist_sysctl_get_number(values, name, mib+2,
-			    size-2, sizeof(long))) {
+			if (!nvlist_sysctl_get_number(values, name, mib,
+			    size, sizeof(long))) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_ULONG:
-			if (!nvlist_sysctl_get_number(values, name, mib+2,
-			    size-2, sizeof(unsigned long))) {
+			if (!nvlist_sysctl_get_number(values, name, mib,
+			    size, sizeof(unsigned long))) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_U64:
-			if (!nvlist_sysctl_get_number(values, name, mib+2,
-			    size-2, sizeof(uint64_t))) {
+			if (!nvlist_sysctl_get_number(values, name, mib,
+			    size, sizeof(uint64_t))) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_U8:
-			if (!nvlist_sysctl_get_number(values, name, mib+2,
-			    size-2, sizeof(uint8_t))) {
+			if (!nvlist_sysctl_get_number(values, name, mib,
+			    size, sizeof(uint8_t))) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_U16:
-			if (!nvlist_sysctl_get_number(values, name, mib+2,
-			    size-2, sizeof(uint16_t))) {
+			if (!nvlist_sysctl_get_number(values, name, mib,
+			    size, sizeof(uint16_t))) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_S8:
-			if (!nvlist_sysctl_get_number(values, name, mib+2,
-			    size-2, sizeof(int8_t))) {
+			if (!nvlist_sysctl_get_number(values, name, mib,
+			    size, sizeof(int8_t))) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_S16:
-			if (!nvlist_sysctl_get_number(values, name, mib+2,
-			    size-2, sizeof(int16_t))) {
+			if (!nvlist_sysctl_get_number(values, name, mib,
+			    size, sizeof(int16_t))) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_S32:
-			if (!nvlist_sysctl_get_number(values, name, mib+2,
-			    size-2, sizeof(int32_t))) {
+			if (!nvlist_sysctl_get_number(values, name, mib,
+			    size, sizeof(int32_t))) {
 				goto fail;
 			}
 			break;
 		case CTLTYPE_U32:
-			if (!nvlist_sysctl_get_number(values, name, mib+2,
-			    size-2, sizeof(uint32_t))) {
+			if (!nvlist_sysctl_get_number(values, name, mib,
+			    size, sizeof(uint32_t))) {
 				goto fail;
 			}
 			break;
@@ -569,6 +628,7 @@ nvlist_sysctl_new(nvlist_t *newp)
 {
 	int mib[CTL_MAXNAME+2], type;
 	u_int kind;
+	const nvlist_t *value;
 	size_t miblen;
 	const char *newname;
 	void *cookie;
@@ -579,28 +639,41 @@ nvlist_sysctl_new(nvlist_t *newp)
 	cookie = NULL;
 	while ((newname = nvlist_next(newp, &type, &cookie)) != NULL) {
 		miblen = CTL_MAXNAME+2;
-		if (!nvlist_sysctl_name_format(mib, newname, &miblen, &kind))
-			return (false);
+
+		switch(type) {
+		case NV_TYPE_NVLIST:
+			if (!nvlist_sysctl_nvlist_format(newp, mib, newname,
+			    &miblen, &kind, &type))
+				return (false);
+			value = nvlist_get_nvlist(newp, newname);
+			newname = "value";
+			break;
+		default:
+			if (!nvlist_sysctl_name_format(mib, newname, &miblen,
+			    &kind))
+				return (false);
+			value = newp;
+		}
 
 		switch(type) {
 		case NV_TYPE_NUMBER:
-			if (!nvlist_sysctl_set_number(newp, newname, mib+2,
-			    miblen-2, kind))
+			if (!nvlist_sysctl_set_number(value, newname, mib,
+			    miblen, kind))
 				return (false);
 			break;
 		case NV_TYPE_NUMBER_ARRAY:
-			if (!nvlist_sysctl_set_number_array(newp, newname,
-			    mib+2, miblen-2, kind))
+			if (!nvlist_sysctl_set_number_array(value, newname,
+			    mib, miblen, kind))
 				return (false);
 			break;
 		case NV_TYPE_STRING:
-			if (!nvlist_sysctl_set_string(newp, newname, mib+2,
-			    miblen-2))
+			if (!nvlist_sysctl_set_string(value, newname, mib,
+			    miblen))
 				return (false);
 			break;
 		case NV_TYPE_BINARY:
-			if (!nvlist_sysctl_set_binary(newp, newname, mib+2,
-			    miblen-2))
+			if (!nvlist_sysctl_set_binary(value, newname, mib,
+			    miblen))
 				return (false);
 			break;
 		default:
