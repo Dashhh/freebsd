@@ -125,34 +125,32 @@ from
 The
 .Nm cnvlist_get
 family of functions obtains the value of the supplied cookie.
-Returned strings, nvlists, descriptors, binaries or arrays must not be modified
+Returned strings, nvlists, descriptors, binaries, or arrays must not be modified
 by the user.
 They still belong to the nvlist.
-The nvlist must not be in error state.
+The nvlist must not be in an error state.
 .Pp
 The
 .Nm cnvlist_take
 family of functions returns the value associated with the given cookie and
-rmove the element from the nvlist.
+remove the element from the nvlist.
 When the value is a string, binary, or array value, the caller is responsible
 for freeing returned memory with
 .Fn free 3 .
-function.
 When the value is an nvlist, the caller is responsible for destroying the
 returned nvlist with
-.Fn nvlist_destroy
-function.
+.Fn nvlist_destroy .
 When the value is a descriptor, the caller is responsible for closing the
-returned descriptor with
-.Fn close 2
-system call.
+returned descriptor with the
+.Fn close 2 .
 .Pp
 The
 .Nm cnvlist_free
-family of functions removes element of the given cookie and free all resources
-associated with it.
-If element of the given cookie has wrong type or does not exist, the program
-will be aborted.
+family of functions removes an element of the supplied cookie and frees all
+resources.
+If an element of the given cookie has the wrong type or does not exist, the
+program
+is aborted.
 .Sh Example
 The following example demonstrates how to deal with cnvlist API.
 .Bd -literal
