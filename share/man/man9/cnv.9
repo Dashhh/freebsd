@@ -124,18 +124,17 @@ from
 .Pp
 The
 .Nm cnvlist_get
-family of functions obtains the value of the supplied cookie.
+family of functions obtains the value associated with the given cookie.
 Returned strings, nvlists, descriptors, binaries, or arrays must not be modified
-by the user.
-They still belong to the nvlist.
+by the user, since they still belong to the nvlist.
 The nvlist must not be in an error state.
 .Pp
 The
 .Nm cnvlist_take
 family of functions returns the value associated with the given cookie and
-remove the element from the nvlist.
+removes the element from the nvlist.
 When the value is a string, binary, or array value, the caller is responsible
-for freeing returned memory with
+for freeing the returned memory with
 .Fn free 3 .
 When the value is an nvlist, the caller is responsible for destroying the
 returned nvlist with
@@ -151,7 +150,7 @@ resources.
 If an element of the given cookie has the wrong type or does not exist, the
 program
 is aborted.
-.Sh Example
+.Sh EXAMPLE
 The following example demonstrates how to deal with cnvlist API.
 .Bd -literal
 int type;
@@ -165,7 +164,7 @@ nvlist_add_string(nvl, "test2", "cnvlist");
 cookie = NULL;
 
 while (nvlist_next(nvl, &type, &cookie) != NULL) {
-        switch(type) {
+        switch (type) {
         case NV_TYPE_BOOL:
                 printf("test: %d\\n", cnvlist_get_bool(cookie));
                 bcookie = cookie;
@@ -197,4 +196,4 @@ return (0);
 The
 .Nm cnv
 API was created during the Google Summer Of Code 2016 by
-.An Adam Starak Aq starak.adam@gmail.com
+.An Adam Starak Aq starak.adam@gmail.com .
