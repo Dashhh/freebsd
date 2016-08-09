@@ -72,7 +72,8 @@ The
 .Nm dnvlist_get
 family of functions returns the value associated with the specified name.
 If an element of the specified name does not exist, the function returns the
-value provided in defval.
+value provided in
+.Fa defval .
 Returned strings, nvlists, descriptors, binaries, or arrays must not be modified
 by the user.
 They still belong to the nvlist.
@@ -99,6 +100,11 @@ returned descriptor with
 .Xr close 2 ,
 .Xr free 3
 .Xr nv 9 ,
+.Sh HISTORY
+The
+.Nm dnv
+API appeared in
+.Fx 11.0 .
 .Sh AUTHORS
 .An -nosplit
 The
@@ -106,3 +112,5 @@ The
 API was implemented by
 .An Pawel Jakub Dawidek Aq Mt pawel@dawidek.net
 under sponsorship from the FreeBSD Foundation.
+This manual page was written by
+.An Adam Starak Aq Mt starak.adam@gmail.com
