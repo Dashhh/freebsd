@@ -31,6 +31,7 @@
 .Sh NAME
 .Nm cnvlist_get,
 .Nm cnvlist_take,
+and
 .Nm cnvlist_free,
 .Nd "API for managing name/value pairs by cookie."
 .Sh LIBRARY
@@ -140,7 +141,7 @@ When the value is an nvlist, the caller is responsible for destroying the
 returned nvlist with
 .Fn nvlist_destroy .
 When the value is a descriptor, the caller is responsible for closing the
-returned descriptor with the
+returned descriptor with
 .Fn close 2 .
 .Pp
 The
@@ -151,7 +152,7 @@ If an element of the given cookie has the wrong type or does not exist, the
 program
 is aborted.
 .Sh EXAMPLE
-The following example demonstrates how to deal with cnvlist API.
+This example demonstrates how to deal with the cnvlist API.
 .Bd -literal
 int type;
 void *cookie, *scookie, *bcookie;
@@ -188,9 +189,9 @@ nvlist_destroy(nvl);
 return (0);
 .Ed
 .Sh SEE ALSO
-.Xr nv 9 ,
 .Xr close 2 ,
 .Xr free 3
+.Xr nv 9 ,
 .Sh AUTHORS
 .An -nosplit
 The
